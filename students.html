@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manage Students – Grace Exam Seating ERP</title>
+<link rel="icon" href="https://res.cloudinary.com/de1tywvqm/image/upload/v1758813951/logo_eq52wb.png" type="image/png">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+:root {
+  --v50: #f5f3ff; --v100: #ede9fe; --v200: #ddd6fe; --v300: #c4b5fd;
+  --v400: #a78bfa; --v500: #8b5cf6; --v600: #7c3aed; --v700: #6d28d9;
+  --v900: #4c1d95; --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+  --gray-500: #6b7280; --gray-700: #374151; --gray-900: #111827; --white: #ffffff;
+  --radius-lg: 18px; --shadow-card: 0 4px 24px rgba(109,40,217,.08);
+}
+body { font-family: 'Inter', sans-serif; background: #faf7f5; color: var(--gray-900); min-height: 100vh; }
+.erp-shell { padding: 30px 36px 80px; max-width: 1360px; margin: 0 auto; }
+.page-hero { background: linear-gradient(135deg, var(--v900) 0%, var(--v700) 50%, var(--v600) 100%); border-radius: var(--radius-lg); padding: 30px 36px; margin-bottom: 22px; color: #fff; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.hero-title { font-size: 1.85rem; font-weight: 800; margin-bottom: 4px; }
+.hero-subtitle { font-size: 0.875rem; opacity: 0.8; }
+.filter-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 24px 28px; margin-bottom: 22px; box-shadow: var(--shadow-card); }
+.filter-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr auto; gap: 16px; align-items: end; }
+.fg-label { display: block; font-size: 0.70rem; font-weight: 700; text-transform: uppercase; color: var(--gray-500); margin-bottom: 7px; }
+.fg-ctrl { width: 100%; height: 44px; background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: 8px; padding: 0 14px; font-size: 0.875rem; outline: none; }
+.btn-outline-v { height: 44px; padding: 0 18px; background: var(--white); color: var(--gray-500); border: 1.5px solid var(--gray-200); border-radius: 8px; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.table-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); overflow: hidden; }
+.tc-head { display: flex; align-items: center; justify-content: space-between; padding: 15px 24px; background: linear-gradient(135deg, var(--v700), var(--v500)); color: #fff; font-weight: 700; }
+table.erp-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+table.erp-table thead th { background: var(--v50); padding: 12px 22px; font-size: 0.67rem; font-weight: 700; text-transform: uppercase; color: var(--v600); border-bottom: 2px solid var(--v200); }
+table.erp-table tbody td { padding: 13px 22px; vertical-align: middle; border-bottom: 1px solid var(--gray-100); }
+.cell-regno { font-family: monospace; font-weight: 700; color: var(--v600); }
+.dept-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.70rem; font-weight: 700; background: var(--v100); color: var(--v700); }
+.pag-bar { display: flex; align-items: center; justify-content: center; padding: 16px 22px; gap: 4px; border-top: 1px solid var(--gray-100); background: var(--gray-50); }
+.pag-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; background: var(--white); border: 1.5px solid var(--gray-200); border-radius: 8px; color: var(--gray-500); font-weight: 600; text-decoration: none; cursor: pointer; }
+.status-pill { padding: 4px 10px; border-radius: 20px; font-size: 0.70rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+.status-active { background: #dcfce7; color: #15803d; }
+.status-disc { background: #fee2e2; color: #b91c1c; }
+.btn-status-toggle { height: 30px; padding: 0 10px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 4px; transition: all 0.15s; }
+.btn-make-disc { background: #fff1f2; color: #e11d48; border-color: #fecdd3; }
+.btn-make-disc:hover { background: #e11d48; color: #fff; }
+.btn-make-active { background: #ecfdf5; color: #059669; border-color: #a7f3d0; }
+.btn-make-active:hover { background: #059669; color: #fff; }
+@media (max-width: 768px) {
+    .filter-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<script src="app.js"></script>
+<script src="nav.js"></script>
+<script>renderMenu('students.html');</script>
+
+<div class="erp-shell">
+
+  <div id="alertArea"></div>
+
+  <!-- MAIN LIST VIEW -->
+  <div id="listView">
+    <!-- HERO -->
+    <div class="page-hero">
+      <div>
+        <h1 class="hero-title">Student Directory</h1>
+        <p class="hero-subtitle">Grace College of Engineering &bull; Exam Seating Centre 9503</p>
+      </div>
+      <div>
+        <button class="btn btn-outline-light fw-bold me-2" onclick="restoreSeedStudents()"><i class="fa-solid fa-arrows-rotate me-1"></i> Reload 928 DB Seed Students</button>
+        <button class="btn btn-light fw-bold" onclick="showAddForm()"><i class="fa-solid fa-user-plus me-1"></i> Add Student</button>
+      </div>
+    </div>
+
+    <!-- FILTER — Auto-search on any change, no Search button -->
+    <div class="filter-card">
+      <div class="filter-grid">
+        <div>
+          <label class="fg-label">Student Name</label>
+          <input type="text" id="filterName" class="fg-ctrl" placeholder="Search name…" oninput="applyFilters()">
+        </div>
+        <div>
+          <label class="fg-label">Register Number</label>
+          <input type="text" id="filterRegno" class="fg-ctrl" placeholder="e.g. 950322104001…" oninput="applyFilters()">
+        </div>
+        <div>
+          <label class="fg-label">Department</label>
+          <select id="filterDept" class="fg-ctrl" onchange="applyFilters()">
+            <option value="">All Departments</option>
+          </select>
+        </div>
+        <div>
+          <label class="fg-label">Status</label>
+          <select id="filterStatus" class="fg-ctrl" onchange="applyFilters()">
+            <option value="">All Statuses</option>
+            <option value="Active">Active</option>
+            <option value="Discontinued">Discontinued</option>
+          </select>
+        </div>
+        <div>
+          <button type="button" class="btn-outline-v" onclick="resetFilters()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-card">
+      <div class="tc-head">
+        <div>Student Directory (Total: <span id="totalCount">0</span>)</div>
+      </div>
+      <table class="erp-table">
+        <thead>
+          <tr>
+            <th style="width:60px;text-align:center;">#</th>
+            <th>Student Name</th>
+            <th style="width:180px;">Register No.</th>
+            <th>Department</th>
+            <th style="width:130px;text-align:center;">Status</th>
+            <th style="width:130px;text-align:center;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTableBody"></tbody>
+      </table>
+      <div class="pag-bar" id="paginationBar"></div>
+    </div>
+  </div>
+
+  <!-- ADD STUDENT VIEW -->
+  <div id="addView" style="display:none;">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-sm border-0 rounded-lg">
+          <div class="card-header text-white text-center py-3" style="background:#4c1d95;">
+            <h4 class="mb-0 fw-bold"><i class="fa-solid fa-user-plus me-2"></i> Add New Student</h4>
+          </div>
+          <div class="card-body p-4">
+            <div id="addAlert"></div>
+            <div class="mb-3">
+              <label class="fw-bold">Register Number</label>
+              <input type="text" id="addRegNo" class="form-control" placeholder="e.g. 950322104001" required>
+            </div>
+            <div class="mb-3">
+              <label class="fw-bold">Student Name</label>
+              <input type="text" id="addName" class="form-control" placeholder="e.g. John Doe" required>
+            </div>
+            <div class="mb-4">
+              <label class="fw-bold">Department</label>
+              <select id="addDept" class="form-control" required>
+                <option value="">-- Select Department --</option>
+                <option value="AI&DS">AI&DS (Artificial Intelligence & Data Science)</option>
+                <option value="CSE">CSE (Computer Science & Engineering)</option>
+                <option value="EEE">EEE (Electrical & Electronics Engineering)</option>
+                <option value="ECE">ECE (Electronics & Communication Engineering)</option>
+                <option value="MECH">MECH (Mechanical Engineering)</option>
+                <option value="CIVIL">CIVIL (Civil Engineering)</option>
+                <option value="MBA">MBA (Master of Business Administration)</option>
+              </select>
+            </div>
+            <div class="mb-4">
+              <label class="fw-bold">Status</label>
+              <select id="addStatus" class="form-control">
+                <option value="Active" selected>Active</option>
+                <option value="Discontinued">Discontinued</option>
+              </select>
+            </div>
+            <div class="d-flex justify-content-between">
+              <button class="btn btn-secondary" onclick="hideAddForm()">Back to Directory</button>
+              <button class="btn btn-success fw-bold px-4" onclick="saveStudent()">Save Student</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const PAGE_SIZE = 50;
+let currentPage = 1;
+
+// Populate department filter
+function populateDeptFilter() {
+    const select = document.getElementById('filterDept');
+    const current = select.value;
+    const depts = Object.keys(DEPT_TO_CODE);
+    select.innerHTML = '<option value="">All Departments</option>';
+    depts.forEach(d => {
+        select.innerHTML += `<option value="${escapeHtml(d)}" ${d === current ? 'selected' : ''}>${escapeHtml(d)}</option>`;
+    });
+}
+
+function getFilters() {
+    return {
+        name: document.getElementById('filterName').value.trim(),
+        regno: document.getElementById('filterRegno').value.trim(),
+        dept: document.getElementById('filterDept').value,
+        status: document.getElementById('filterStatus') ? document.getElementById('filterStatus').value : ''
+    };
+}
+
+function applyFilters() {
+    currentPage = 1;
+    renderStudents();
+}
+
+function resetFilters() {
+    document.getElementById('filterName').value = '';
+    document.getElementById('filterRegno').value = '';
+    document.getElementById('filterDept').value = '';
+    if (document.getElementById('filterStatus')) document.getElementById('filterStatus').value = '';
+    currentPage = 1;
+    renderStudents();
+}
+
+function renderStudents() {
+    const filters = getFilters();
+    const allStudents = Students.search(filters);
+    const totalRecords = allStudents.length;
+    const totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const offset = (currentPage - 1) * PAGE_SIZE;
+    const pageStudents = allStudents.slice(offset, offset + PAGE_SIZE);
+
+    document.getElementById('totalCount').textContent = totalRecords.toLocaleString();
+
+    const tbody = document.getElementById('studentsTableBody');
+    if (pageStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">No students found matching current filters.</td></tr>';
+    } else {
+        tbody.innerHTML = pageStudents.map((s, idx) => {
+            const fullName = ((s.stu_fname || '') + ' ' + (s.stu_lname || '')).trim();
+            const dept = getStudentDept(s.stu_regno) || s.stu_dept || '';
+            const sl = offset + idx + 1;
+            const isDisc = (s.stu_status || '').toLowerCase().includes('discontinu');
+            return `<tr>
+                <td style="text-align:center;font-weight:bold;color:var(--gray-500);">${sl}</td>
+                <td style="font-weight:600;">${escapeHtml(fullName)}</td>
+                <td class="cell-regno">${escapeHtml(s.stu_regno || '')}</td>
+                <td><span class="dept-pill">${escapeHtml(dept)}</span></td>
+                <td style="text-align:center;">
+                    ${isDisc 
+                        ? '<span class="status-pill status-disc"><i class="fa-solid fa-ban"></i> Discontinued</span>'
+                        : '<span class="status-pill status-active"><i class="fa-solid fa-check"></i> Active</span>'}
+                </td>
+                <td style="text-align:center;">
+                    <button type="button" class="btn-status-toggle ${isDisc ? 'btn-make-active' : 'btn-make-disc'}" onclick="toggleStudentStatus('${escapeHtml(s.stu_regno)}')">
+                        ${isDisc ? '<i class="fa-solid fa-user-check"></i> Activate' : '<i class="fa-solid fa-user-slash"></i> Discontinue'}
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Pagination
+    const pagBar = document.getElementById('paginationBar');
+    if (totalPages <= 1) {
+        pagBar.innerHTML = '';
+    } else {
+        let pagHtml = '';
+        if (currentPage > 1) {
+            pagHtml += `<button class="pag-btn" onclick="goToPage(${currentPage - 1})" title="Previous"><i class="fa-solid fa-chevron-left"></i></button>`;
+        }
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                pagHtml += `<button class="pag-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                pagHtml += `<span class="px-2 text-muted" style="line-height:38px;">…</span>`;
+            }
+        }
+        if (currentPage < totalPages) {
+            pagHtml += `<button class="pag-btn" onclick="goToPage(${currentPage + 1})" title="Next"><i class="fa-solid fa-chevron-right"></i></button>`;
+        }
+        pagBar.innerHTML = pagHtml;
+    }
+}
+
+function toggleStudentStatus(regNo) {
+    const res = Students.toggleStatus(regNo);
+    if (res.ok) {
+        renderStudents();
+        const alertArea = document.getElementById('alertArea');
+        if (alertArea) {
+            alertArea.innerHTML = `<div class="alert alert-info alert-dismissible fade show" role="alert"><i class="fa-solid fa-circle-check me-2"></i>Student <strong>${escapeHtml(regNo)}</strong> status set to <strong>${escapeHtml(res.status)}</strong>.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        }
+    }
+}
+
+function restoreSeedStudents() {
+    if (confirm('Reload the 928 student records from database_seed.sql (including 3 discontinued students)?')) {
+        Students.resetToDatabaseSeed();
+        resetFilters();
+        const alertArea = document.getElementById('alertArea');
+        if (alertArea) {
+            alertArea.innerHTML = '<div class="alert alert-success alert-dismissible fade show" role="alert"><i class="fa-solid fa-circle-check me-2"></i>Loaded all 928 seed students (925 Active, 3 Discontinued)!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+        }
+    }
+}
+
+function goToPage(p) {
+    currentPage = p;
+    renderStudents();
+}
+
+function showAddForm() {
+    document.getElementById('listView').style.display = 'none';
+    document.getElementById('addView').style.display = '';
+}
+
+function hideAddForm() {
+    document.getElementById('addView').style.display = 'none';
+    document.getElementById('listView').style.display = '';
+}
+
+function saveStudent() {
+    const regNo = document.getElementById('addRegNo').value.trim();
+    const name = document.getElementById('addName').value.trim();
+    const dept = document.getElementById('addDept').value;
+
+    if (!regNo || !name || !dept) {
+        document.getElementById('addAlert').innerHTML = '<div class="alert alert-warning">Please fill in all required fields.</div>';
+        return;
+    }
+
+    const nameParts = name.split(' ', 2);
+    const fname = nameParts[0];
+    const lname = nameParts[1] || '';
+
+    const status = document.getElementById('addStatus') ? document.getElementById('addStatus').value : 'Active';
+    const result = Students.add(regNo, fname, lname, dept, status);
+    if (result.ok) {
+        document.getElementById('addAlert').innerHTML = '<div class="alert alert-success">Student record added successfully!</div>';
+        document.getElementById('addRegNo').value = '';
+        document.getElementById('addName').value = '';
+        document.getElementById('addDept').value = '';
+        renderStudents();
+    } else {
+        document.getElementById('addAlert').innerHTML = `<div class="alert alert-warning">${escapeHtml(result.error)}</div>`;
+    }
+}
+
+// Auto-detect Department from Register Number
+document.getElementById('addRegNo').addEventListener('input', function() {
+    const reg = this.value.trim();
+    const dept = getStudentDept(reg);
+    if (dept) {
+        document.getElementById('addDept').value = dept;
+    }
+});
+
+// Initialize
+populateDeptFilter();
+renderStudents();
+</script>
+</body>
+</html>

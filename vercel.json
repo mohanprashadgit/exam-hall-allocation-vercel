@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/allocation", "destination": "/allocation.html" },
+    { "source": "/management", "destination": "/management.html" },
+    { "source": "/students", "destination": "/students.html" },
+    { "source": "/reports", "destination": "/reports.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}
