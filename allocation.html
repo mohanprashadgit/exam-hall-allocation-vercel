@@ -228,7 +228,8 @@
             position: absolute;
             top: calc(100% - 1px);
             left: 0;
-            right: 0;
+            min-width: 320px;
+            width: max(100%, 320px);
             background: #fff;
             border: 1.5px solid var(--navy-mid);
             border-top: none;
@@ -277,12 +278,21 @@
         .hall-option {
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: space-between;
+            gap: 12px;
             padding: 9px 14px;
             font-size: .875rem;
             color: var(--text);
             cursor: pointer;
-            transition: background .15s;
+            transition: background .15s, border-color .15s;
+            white-space: nowrap;
+        }
+
+        .hall-opt-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
         }
 
         .hall-option:hover,
@@ -294,6 +304,115 @@
         .hall-option.selected {
             background: var(--navy);
             color: #fff;
+        }
+
+        .hall-option.is-allocated {
+            background: #fff5f5;
+            color: #991b1b;
+            cursor: not-allowed;
+            border-left: 3.5px solid #ef4444;
+            opacity: 0.88;
+        }
+
+        .hall-option.is-allocated:hover {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .hall-option.is-available {
+            border-left: 3.5px solid #22c55e;
+        }
+
+        .hall-status-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: auto;
+            white-space: nowrap;
+        }
+
+        .hall-status-badge.status-allocated {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+
+        .hall-status-badge.status-available {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+
+        .hall-allocated-toast {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            z-index: 999999;
+            background: #ffffff;
+            border-left: 5px solid #dc2626;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.22), 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 16px 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            max-width: 460px;
+            min-width: 320px;
+            transform: translateY(-20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .hall-allocated-toast.show {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .toast-icon {
+            font-size: 1.4rem;
+            color: #dc2626;
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #991b1b;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .toast-desc {
+            font-size: 0.84rem;
+            color: #374151;
+            line-height: 1.45;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            color: #9ca3af;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .toast-close:hover {
+            color: #111827;
         }
 
         .hall-opt-badge {
@@ -801,6 +920,16 @@
     <script src="nav.js"></script>
     <script>renderMenu('allocation.html');</script>
 
+    <!-- TOAST NOTIFICATION FOR DUPLICATE HALL ALLOCATION -->
+    <div id="hallAllocatedToast" class="hall-allocated-toast" role="alert" aria-live="assertive">
+        <div class="toast-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="toast-content">
+            <div class="toast-title" id="toastTitle">⚠️ Already Allocated</div>
+            <div class="toast-desc" id="toastDesc">Exam Hall-1 is already allocated for 06-10-2026 FN. Please select another hall.</div>
+        </div>
+        <button type="button" class="toast-close" id="toastCloseBtn" aria-label="Close">&times;</button>
+    </div>
+
     <div class="main-wrap">
 
         <!-- ALERT MESSAGES -->
@@ -1135,25 +1264,99 @@
             // Initialize university time display
             updateUnivTimeDisplay();
 
-            // Populate hall dropdown
+            // ═══════════════════════════════════════════════════════════
+            // TOAST & AVAILABILITY NOTIFICATION
+            // ═══════════════════════════════════════════════════════════
+            let toastTimer = null;
+            function showHallAllocatedToast(hallName, dateSessionText) {
+                const toast = document.getElementById('hallAllocatedToast');
+                const toastTitle = document.getElementById('toastTitle');
+                const toastDesc = document.getElementById('toastDesc');
+                if (!toast) return;
+
+                const nameStr = hallName || 'Selected Hall';
+                const dateSessStr = dateSessionText || getCurrentDateSessionText();
+                toastTitle.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Already Allocated';
+                toastDesc.textContent = `${nameStr} is already allocated for ${dateSessStr}. Please select another hall.`;
+
+                toast.classList.add('show');
+                if (toastTimer) clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 5000);
+
+                showAlert(`<strong>⚠️ Already Allocated:</strong> <strong>${escapeHtml(nameStr)}</strong> is already allocated for <strong>${escapeHtml(dateSessStr)}</strong>. Please select another hall.`, 'danger');
+            }
+
+            const toastCloseBtn = document.getElementById('toastCloseBtn');
+            if (toastCloseBtn) {
+                toastCloseBtn.addEventListener('click', () => {
+                    document.getElementById('hallAllocatedToast').classList.remove('show');
+                });
+            }
+
+            function getCurrentDateSessionText() {
+                const examType = document.querySelector('input[name="exam_type"]:checked') ? document.querySelector('input[name="exam_type"]:checked').value : 'University';
+                const isUniv = examType === 'University';
+                if (isUniv) {
+                    const rawDate = document.getElementById('exam_date') ? document.getElementById('exam_date').value.trim() : '';
+                    const sess = document.getElementById('session') ? (document.getElementById('session').value || 'FN') : 'FN';
+                    const formattedDate = (typeof formatDateDDMMYYYY === 'function') ? formatDateDDMMYYYY(rawDate) : rawDate;
+                    return `${formattedDate} ${sess}`.trim();
+                } else {
+                    const sDate = document.getElementById('start_date') ? document.getElementById('start_date').value.trim() : '';
+                    const eDate = document.getElementById('end_date') ? document.getElementById('end_date').value.trim() : '';
+                    const fStart = (typeof formatDateDDMMYYYY === 'function') ? formatDateDDMMYYYY(sDate) : sDate;
+                    const fEnd = (typeof formatDateDDMMYYYY === 'function') ? formatDateDDMMYYYY(eDate) : eDate;
+                    return `${fStart} to ${fEnd}`.trim();
+                }
+            }
+
+            // Populate hall dropdown with live availability status from database
             function renderHallOptions() {
+                const examType = document.querySelector('input[name="exam_type"]:checked') ? document.querySelector('input[name="exam_type"]:checked').value : 'University';
+                const isUniv = examType === 'University';
+                const examDate = isUniv ? (document.getElementById('exam_date') ? document.getElementById('exam_date').value.trim() : '') : (document.getElementById('start_date') ? document.getElementById('start_date').value.trim() : '');
+                const session = isUniv ? (document.getElementById('session') ? (document.getElementById('session').value || 'FN') : 'FN') : `${document.getElementById('start_date') ? document.getElementById('start_date').value.trim() : ''} to ${document.getElementById('end_date') ? document.getElementById('end_date').value.trim() : ''}`;
+                const fromTime = isUniv ? (document.getElementById('from_time') ? document.getElementById('from_time').value.trim() : '') : '';
+                const toTime = isUniv ? (document.getElementById('to_time') ? document.getElementById('to_time').value.trim() : '') : '';
+                const endDate = isUniv ? '' : (document.getElementById('end_date') ? document.getElementById('end_date').value.trim() : '');
+
                 const groups = Halls.getGrouped();
                 let html = '';
                 for (const [cat, halls] of Object.entries(groups)) {
                     html += `<div class="hall-group-label">${escapeHtml(cat)}</div>`;
                     halls.forEach(h => {
-                        html += `<div class="hall-option" data-value="${escapeHtml(h.hall_no)}" data-group="${escapeHtml(cat)}">
-                    <span class="hall-opt-icon">${h.icon}</span>
-                    <span class="hall-opt-text">${escapeHtml(h.hall_no)}</span>
-                    <span class="hall-opt-badge" style="background:${h.badge_bg};color:${h.badge_color};">${h.badge_label}</span>
-                </div>`;
+                        const isAlloc = SeatAllocations.isHallAllocated(
+                            h.hall_no, examDate, examType, session, fromTime, toTime, origPlan, endDate
+                        );
+                        const isSelected = (document.getElementById('hall_no') && document.getElementById('hall_no').value === h.hall_no);
+                        const statusClass = isAlloc ? 'is-allocated disabled' : 'is-available';
+                        const badgeClass = isAlloc ? 'status-allocated' : 'status-available';
+                        const badgeText = isAlloc ? '🔴 Already Allocated' : '🟢 Available';
+                        const selectedClass = isSelected ? ' selected' : '';
+
+                        html += `<div class="hall-option ${statusClass}${selectedClass}" 
+                                      data-value="${escapeHtml(h.hall_no)}" 
+                                      data-group="${escapeHtml(cat)}" 
+                                      data-allocated="${isAlloc ? 'true' : 'false'}"
+                                      data-hall-name="${escapeHtml(h.hall_no)}"
+                                      title="${isAlloc ? escapeHtml(h.hall_no + ' is already allocated for this date and session.') : ''}">
+                            <div class="hall-opt-left">
+                                <span class="hall-opt-icon">${h.icon}</span>
+                                <span class="hall-opt-text">${escapeHtml(h.hall_no)}</span>
+                            </div>
+                            <span class="hall-status-badge ${badgeClass}">${badgeText}</span>
+                        </div>`;
                     });
                 }
                 html += `<div class="hall-option" data-value="+ Other Hall" style="background:var(--v50);color:var(--v600);font-weight:700;">
-            <span class="hall-opt-icon"><i class="fa-solid fa-plus text-primary"></i></span>
-            <span class="hall-opt-text">+ Other Hall</span>
-            <span class="hall-opt-badge" style="background:var(--v100);color:var(--v600);">NEW</span>
-        </div>`;
+                    <div class="hall-opt-left">
+                        <span class="hall-opt-icon"><i class="fa-solid fa-plus text-primary"></i></span>
+                        <span class="hall-opt-text">+ Other Hall</span>
+                    </div>
+                    <span class="hall-opt-badge" style="background:var(--v100);color:var(--v600);">NEW</span>
+                </div>`;
                 document.getElementById('hallOptionsList').innerHTML = html;
             }
             renderHallOptions();
@@ -1203,6 +1406,7 @@
                     } else {
                         showInternalFields();
                     }
+                    renderHallOptions();
                     runDuplicateCheck();
                 });
             });
@@ -1210,6 +1414,7 @@
             // Session change updates university time display
             document.getElementById('session').addEventListener('change', function () {
                 updateUnivTimeDisplay();
+                renderHallOptions();
                 runDuplicateCheck();
             });
 
@@ -1221,7 +1426,13 @@
             const hiddenInput = document.getElementById('hall_no');
             const searchInput = document.getElementById('hallSearch');
 
-            function openCombo() { combo.classList.add('open'); searchInput.value = ''; filterHalls(''); setTimeout(() => searchInput.focus(), 50); }
+            function openCombo() { 
+                renderHallOptions();
+                combo.classList.add('open'); 
+                searchInput.value = ''; 
+                filterHalls(''); 
+                setTimeout(() => searchInput.focus(), 50); 
+            }
             function closeCombo() { combo.classList.remove('open'); }
             function filterHalls(q) {
                 const term = q.toLowerCase().trim();
@@ -1244,14 +1455,23 @@
                 if (val === '+ Other Hall') {
                     closeCombo();
                     $('#otherHallModal').modal('show');
-                } else {
-                    displayInput.value = val;
-                    hiddenInput.value = val;
-                    document.querySelectorAll('.hall-option').forEach(o => o.classList.remove('selected'));
-                    opt.classList.add('selected');
-                    closeCombo();
-                    runDuplicateCheck();
+                    return;
                 }
+
+                // If hall is already allocated, prevent selection and show toast / notification
+                if (opt.dataset.allocated === 'true' || opt.classList.contains('is-allocated') || opt.classList.contains('disabled')) {
+                    const hallName = opt.dataset.hallName || val;
+                    const dateSess = getCurrentDateSessionText();
+                    showHallAllocatedToast(hallName, dateSess);
+                    return;
+                }
+
+                displayInput.value = val;
+                hiddenInput.value = val;
+                document.querySelectorAll('.hall-option').forEach(o => o.classList.remove('selected'));
+                opt.classList.add('selected');
+                closeCombo();
+                runDuplicateCheck();
             });
 
             // Add New Hall via Modal
@@ -1299,7 +1519,7 @@
                 return groups;
             }
 
-            // Resolve students from multiple department groups, excluding discontinued/inactive students
+            // Resolve students from multiple department groups, excluding discontinued/inactive/missing students
             function resolveActiveStudentsMulti(groups, maxSeats) {
                 const list = [];
                 const skipped = [];
@@ -1307,16 +1527,46 @@
                     if (!group.rawInput || !group.rawInput.trim()) continue;
                     if (list.length >= maxSeats) break;
                     const rawNos = expandRegRange(group.rawInput, 80);
+
+                    // Detect common batch/dept prefix from raw numbers or matched students
+                    let commonPrefix = null;
+                    for (const r of rawNos) {
+                        if (r.length >= 9) {
+                            commonPrefix = r.substring(0, r.length - 3);
+                            break;
+                        }
+                        const s = Students.find(r);
+                        if (s && s.stu_regno && s.stu_regno.length >= 9) {
+                            commonPrefix = s.stu_regno.substring(0, s.stu_regno.length - 3);
+                            break;
+                        }
+                    }
+
+                    // Check if student database has any matching records for this group
+                    const hasAnyDbStudent = rawNos.some(r => {
+                        if (commonPrefix && r.length <= 3 && /^\d+$/.test(r)) {
+                            return !!Students.find(commonPrefix + r.padStart(3, '0'));
+                        }
+                        return !!Students.find(r);
+                    });
+
                     for (const r of rawNos) {
                         if (list.length >= maxSeats) break;
-                        const stu = Students.find(r);
+
+                        let stu = null;
+                        if (commonPrefix && r.length <= 3 && /^\d+$/.test(r)) {
+                            stu = Students.find(commonPrefix + r.padStart(3, '0'));
+                        } else {
+                            stu = Students.find(r);
+                        }
+
                         if (stu) {
                             const st = (stu.stu_status || '').toLowerCase().trim();
                             if (st.includes('discontinu') || st.includes('complete') || st.includes('dropout') || st.includes('transfer') || st.includes('inactive')) {
                                 skipped.push({
                                     reg_no: stu.stu_regno || r,
                                     name: getStudentFullName(stu) || 'Student',
-                                    status: stu.stu_status || 'Discontinued'
+                                    status: 'Discontinued'
                                 });
                                 continue; // Skip discontinued student and organize with remaining active students!
                             }
@@ -1330,13 +1580,26 @@
                                 });
                             }
                         } else {
-                            if (!list.some(s => s.reg_no === r)) {
-                                list.push({
-                                    reg_no: r,
-                                    name: 'Student ' + r,
-                                    dept: getStudentDept(r),
-                                    subject: group.subject
+                            // Missing student from records — omit it and organize with remaining active students
+                            if (Students.count() > 0) {
+                                const missingReg = (commonPrefix && r.length <= 3 && /^\d+$/.test(r))
+                                    ? (commonPrefix + r.padStart(3, '0'))
+                                    : r;
+                                skipped.push({
+                                    reg_no: missingReg,
+                                    name: 'Missing in Records',
+                                    status: 'Missing'
                                 });
+                                continue; // Omit missing student and organize with remaining active students!
+                            } else {
+                                if (!list.some(s => s.reg_no === r)) {
+                                    list.push({
+                                        reg_no: r,
+                                        name: 'Student ' + r,
+                                        dept: getStudentDept(r),
+                                        subject: group.subject
+                                    });
+                                }
                             }
                         }
                     }
@@ -1354,26 +1617,28 @@
                 const { list: leftStudents, skipped: leftSkipped } = resolveActiveStudentsMulti(leftGroups, 13);
                 const { list: rightStudents, skipped: rightSkipped } = resolveActiveStudentsMulti(rightGroups, 12);
 
-                // Update notice for discontinued students left alone
-                const leftNotice = document.getElementById('leftDiscontinuedNotice');
-                if (leftNotice) {
-                    if (leftSkipped.length > 0) {
-                        leftNotice.style.display = '';
-                        leftNotice.innerHTML = `<i class="fa-solid fa-user-slash me-1 text-warning"></i> <strong>Discontinued (Left alone):</strong> ${leftSkipped.map(s => escapeHtml(s.reg_no + (s.name ? ' (' + s.name + ')' : ''))).join(', ')} &mdash; <span class="text-success fw-bold">remaining active students allocated</span>.`;
-                    } else {
-                        leftNotice.style.display = 'none';
+                // Update notice for discontinued/missing students left alone
+                function renderSkippedNotice(noticeEl, skippedList) {
+                    if (!noticeEl) return;
+                    if (!skippedList || skippedList.length === 0) {
+                        noticeEl.style.display = 'none';
+                        return;
                     }
+                    noticeEl.style.display = '';
+                    const discList = skippedList.filter(s => s.status === 'Discontinued');
+                    const missList = skippedList.filter(s => s.status === 'Missing');
+                    const parts = [];
+                    if (discList.length > 0) {
+                        parts.push(`<strong>Discontinued (Left alone):</strong> ${discList.map(s => escapeHtml(s.reg_no + (s.name && s.name !== 'Student' ? ' (' + s.name + ')' : ''))).join(', ')}`);
+                    }
+                    if (missList.length > 0) {
+                        parts.push(`<strong>Missing (Left alone):</strong> ${missList.map(s => escapeHtml(s.reg_no)).join(', ')}`);
+                    }
+                    noticeEl.innerHTML = `<i class="fa-solid fa-user-slash me-1 text-warning"></i> ${parts.join(' &nbsp;&bull;&nbsp; ')} &mdash; <span class="text-success fw-bold">remaining active students organized</span>.`;
                 }
 
-                const rightNotice = document.getElementById('rightDiscontinuedNotice');
-                if (rightNotice) {
-                    if (rightSkipped.length > 0) {
-                        rightNotice.style.display = '';
-                        rightNotice.innerHTML = `<i class="fa-solid fa-user-slash me-1 text-warning"></i> <strong>Discontinued (Left alone):</strong> ${rightSkipped.map(s => escapeHtml(s.reg_no + (s.name ? ' (' + s.name + ')' : ''))).join(', ')} &mdash; <span class="text-success fw-bold">remaining active students allocated</span>.`;
-                    } else {
-                        rightNotice.style.display = 'none';
-                    }
-                }
+                renderSkippedNotice(document.getElementById('leftDiscontinuedNotice'), leftSkipped);
+                renderSkippedNotice(document.getElementById('rightDiscontinuedNotice'), rightSkipped);
 
                 seatingGrid = {};
 
@@ -1438,35 +1703,29 @@
             // ═══════════════════════════════════════════════════════════
             // REAL-TIME DUPLICATE CHECK — Pure client-side
             // ═══════════════════════════════════════════════════════════
-            // ═══════════════════════════════════════════════════════════
-            // REAL-TIME DUPLICATE CHECK — Pure client-side
-            // ═══════════════════════════════════════════════════════════
             function runDuplicateCheck() {
-                const hallNo = document.getElementById('hall_no').value;
+                const hallNo = document.getElementById('hall_no').value.trim();
                 const examType = document.querySelector('input[name="exam_type"]:checked').value;
                 const isUniv = examType === 'University';
-                const examDate = isUniv ? document.getElementById('exam_date').value : document.getElementById('start_date').value;
-                const session = isUniv ? document.getElementById('session').value : '';
-                const fromTime = isUniv ? document.getElementById('from_time').value : '';
-                const toTime = isUniv ? document.getElementById('to_time').value : '';
+                const examDate = isUniv ? document.getElementById('exam_date').value.trim() : document.getElementById('start_date').value.trim();
+                const session = isUniv ? (document.getElementById('session').value || 'FN') : `${document.getElementById('start_date').value.trim()} to ${document.getElementById('end_date').value.trim()}`;
+                const fromTime = isUniv ? document.getElementById('from_time').value.trim() : '';
+                const toTime = isUniv ? document.getElementById('to_time').value.trim() : '';
+                const endDate = isUniv ? '' : document.getElementById('end_date').value.trim();
                 const leftNos = Object.values(seatingGrid).filter(s => s && s.section === 'LEFT').map(s => s.reg_no);
                 const rightNos = Object.values(seatingGrid).filter(s => s && s.section === 'RIGHT').map(s => s.reg_no);
 
-                const conflicts = SeatAllocations.checkConflicts(hallNo, examDate, examType, session, fromTime, toTime, leftNos, rightNos, origPlan);
+                const conflicts = SeatAllocations.checkConflicts(hallNo, examDate, examType, session, fromTime, toTime, leftNos, rightNos, origPlan, endDate);
 
                 const studentConflicts = conflicts.filter(c => c.includes('multiple times') || c.includes('already allocated in'));
-                const hallNotice = conflicts.filter(c => !c.includes('multiple times') && !c.includes('already allocated in'));
+                const hallConflicts = conflicts.filter(c => c.includes('Already Allocated: Hall'));
 
-                if (studentConflicts.length > 0) {
-                    document.getElementById('duplicateAlertContent').innerHTML = '<ul>' + studentConflicts.map(c => `<li>${c}</li>`).join('') + '</ul>';
+                if (hallConflicts.length > 0 || studentConflicts.length > 0) {
+                    const allCritical = [...hallConflicts, ...studentConflicts];
+                    document.getElementById('duplicateAlertContent').innerHTML = '<ul>' + allCritical.map(c => `<li>${c}</li>`).join('') + '</ul>';
                     document.getElementById('duplicateAlert').className = 'duplicate-alert critical-alert';
                     document.getElementById('duplicateAlert').style.display = '';
                     document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = true);
-                } else if (hallNotice.length > 0 && !editMode) {
-                    document.getElementById('duplicateAlertContent').innerHTML = '<div class="small mt-1"><i class="fa-solid fa-circle-info me-1"></i> Note: Hall <strong>' + escapeHtml(hallNo) + '</strong> already has an allocation. Saving will overwrite / update this plan.</div>';
-                    document.getElementById('duplicateAlert').className = 'duplicate-alert warning-alert';
-                    document.getElementById('duplicateAlert').style.display = '';
-                    document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = false);
                 } else {
                     document.getElementById('duplicateAlert').style.display = 'none';
                     document.querySelectorAll('.save-btn').forEach(btn => btn.disabled = false);
@@ -1548,7 +1807,11 @@
             seatLayoutEl.addEventListener('change', () => { updateLivePreview(); runDuplicateCheck(); });
 
             ['exam_date', 'start_date', 'end_date'].forEach(id => {
-                document.getElementById(id).addEventListener('change', runDuplicateCheck);
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('change', () => { renderHallOptions(); runDuplicateCheck(); });
+                    el.addEventListener('input', () => { renderHallOptions(); runDuplicateCheck(); });
+                }
             });
 
             // ── Clear buttons (multi-group aware) ──
@@ -1586,6 +1849,7 @@
                 document.getElementById('end_date').value = todayStr();
                 clearSection('left');
                 clearSection('right');
+                renderHallOptions();
                 updateLivePreview(); runDuplicateCheck();
                 showAlert('All details cleared.', 'success');
             });
@@ -1625,17 +1889,27 @@
                     }
                 }
 
+                // Backend validation: reject duplicate hall allocation before saving
+                const isHallDup = SeatAllocations.isHallAllocated(hallNo, examDate, examType, session, fromTime, toTime, origPlan, endDate);
+                if (isHallDup) {
+                    const dateSess = getCurrentDateSessionText();
+                    const errMsg = `⚠️ Already Allocated: ${hallNo} is already allocated for ${dateSess}. Please select another hall.`;
+                    showAlert(`<strong><i class="fa-solid fa-triangle-exclamation me-1"></i> Cannot Save Seating Plan!</strong><br>${errMsg}`, 'danger');
+                    showHallAllocatedToast(hallNo, dateSess);
+                    return;
+                }
+
                 // Force update preview to ensure grid is current
                 updateLivePreview();
 
-                // Run final conflict check (critical student duplicates only)
+                // Run final conflict check (critical student duplicates & hall conflict)
                 const leftNos = Object.values(seatingGrid).filter(s => s && s.section === 'LEFT').map(s => s.reg_no);
                 const rightNos = Object.values(seatingGrid).filter(s => s && s.section === 'RIGHT').map(s => s.reg_no);
-                const conflicts = SeatAllocations.checkConflicts(hallNo, examDate, examType, session, fromTime, toTime, leftNos, rightNos, origPlan);
-                const criticalConflicts = conflicts.filter(c => c.includes('multiple times') || c.includes('already allocated in'));
+                const conflicts = SeatAllocations.checkConflicts(hallNo, examDate, examType, session, fromTime, toTime, leftNos, rightNos, origPlan, endDate);
+                const criticalConflicts = conflicts.filter(c => c.includes('multiple times') || c.includes('already allocated in') || c.includes('Already Allocated: Hall'));
 
                 if (criticalConflicts.length > 0) {
-                    showAlert('<strong><i class="fa-solid fa-triangle-exclamation me-1"></i> Cannot Save Allocation — Student Conflict!</strong><br>' + criticalConflicts.join('<br>'), 'danger');
+                    showAlert('<strong><i class="fa-solid fa-triangle-exclamation me-1"></i> Cannot Save Allocation — Conflict Detected!</strong><br>' + criticalConflicts.join('<br>'), 'danger');
                     return;
                 }
 
@@ -1672,6 +1946,10 @@
                 if (result.ok) {
                     sessionStorage.setItem('flash_message', `Seating plan saved successfully! (${result.saved} seats allocated in ${hallNo})`);
                     window.location.href = 'management.html';
+                } else {
+                    showAlert(`<strong><i class="fa-solid fa-triangle-exclamation me-1"></i> Cannot Save Seating Plan!</strong><br>${result.error}`, 'danger');
+                    const dateSess = getCurrentDateSessionText();
+                    showHallAllocatedToast(hallNo, dateSess);
                 }
             }
 

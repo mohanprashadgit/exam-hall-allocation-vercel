@@ -69,6 +69,159 @@ body { background: var(--dash-bg) !important; }
     .hero-text h1 { font-size: 1.4rem; }
     .hero-actions { justify-content: center; }
 }
+
+/* DASHBOARD FILTERS */
+.dash-filter-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    padding: 22px 26px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(109,40,217,0.06);
+    transition: all var(--transition);
+}
+.dash-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.dash-filter-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+.dash-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    align-items: end;
+}
+.dash-filter-grid-row2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 14px;
+    align-items: end;
+    margin-top: 14px;
+}
+.dash-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.dash-filter-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--gray-600);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+}
+.dash-filter-ctrl {
+    height: 42px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--gray-200);
+    background: var(--gray-50);
+    padding: 0 14px;
+    font-size: 0.86rem;
+    color: var(--gray-900);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    width: 100%;
+}
+.dash-filter-ctrl:focus {
+    border-color: var(--purple-500);
+    box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
+    background: #fff;
+}
+.dash-filter-btn-reset {
+    height: 42px;
+    padding: 0 18px;
+    border-radius: var(--radius-md);
+    border: 1.5px solid var(--gray-200);
+    background: #fff;
+    color: var(--gray-600);
+    font-size: 0.84rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+}
+.dash-filter-btn-reset:hover {
+    background: var(--purple-50);
+    border-color: var(--purple-300);
+    color: var(--purple-700);
+}
+.dash-active-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--gray-100);
+    font-size: 0.75rem;
+}
+.dash-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--purple-50);
+    border: 1px solid var(--purple-200);
+    color: var(--purple-700);
+    font-weight: 600;
+}
+.dash-pill-remove {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+.dash-pill-remove:hover {
+    opacity: 1;
+    color: #dc2626;
+}
+
+/* RESULTS SECTION */
+.dash-results-card {
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(109,40,217,0.06);
+    overflow: hidden;
+}
+.dash-results-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+@media (max-width: 900px) {
+    .dash-filter-grid,
+    .dash-filter-grid-row2 {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
 </head>
 <body>
@@ -111,8 +264,167 @@ body { background: var(--dash-bg) !important; }
     </div>
 </div>
 
+<!-- FILTER CARD -->
+<div class="dash-filter-card">
+    <div class="dash-filter-header">
+        <h5 class="dash-filter-title">
+            <i class="fa-solid fa-filter" style="color:var(--purple-600);"></i>
+            Filter Dashboard Overview
+        </h5>
+        <span class="text-muted" style="font-size:0.75rem;">
+            Filter metrics, seating plans & student records in real time
+        </span>
+    </div>
+    <div class="dash-filter-grid">
+        <div class="dash-filter-group">
+            <label class="dash-filter-label" for="filterDept">
+                <i class="fa-solid fa-building-columns text-primary"></i> Department
+            </label>
+            <select id="filterDept" class="dash-filter-ctrl" onchange="applyDashboardFilters()">
+                <option value="">All Departments</option>
+            </select>
+        </div>
+        <div class="dash-filter-group">
+            <label class="dash-filter-label" for="filterYear">
+                <i class="fa-solid fa-graduation-cap text-success"></i> Year
+            </label>
+            <select id="filterYear" class="dash-filter-ctrl" onchange="applyDashboardFilters()">
+                <option value="">All Years</option>
+                <optgroup label="Year of Study">
+                    <option value="1">1st Year (I Year)</option>
+                    <option value="2">2nd Year (II Year)</option>
+                    <option value="3">3rd Year (III Year)</option>
+                    <option value="4">4th Year (IV Year)</option>
+                </optgroup>
+                <optgroup label="Admission Batch">
+                    <option value="2025">Batch 2025</option>
+                    <option value="2024">Batch 2024</option>
+                    <option value="2023">Batch 2023</option>
+                    <option value="2022">Batch 2022</option>
+                    <option value="2021">Batch 2021</option>
+                    <option value="2020">Batch 2020</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="dash-filter-group">
+            <label class="dash-filter-label" for="filterDate">
+                <i class="fa-regular fa-calendar-days text-warning"></i> Examination Date
+            </label>
+            <input type="date" id="filterDate" class="dash-filter-ctrl" onchange="applyDashboardFilters()" oninput="applyDashboardFilters()">
+        </div>
+    </div>
+    <div class="dash-filter-grid-row2">
+        <div class="dash-filter-group">
+            <label class="dash-filter-label" for="filterHall">
+                <i class="fa-solid fa-door-open" style="color:var(--indigo-500);"></i> Exam Hall
+            </label>
+            <select id="filterHall" class="dash-filter-ctrl" onchange="applyDashboardFilters()">
+                <option value="">All Halls</option>
+            </select>
+        </div>
+        <div class="dash-filter-group">
+            <label class="dash-filter-label" for="filterExamType">
+                <i class="fa-solid fa-file-signature" style="color:#e11d48;"></i> Exam Type
+            </label>
+            <select id="filterExamType" class="dash-filter-ctrl" onchange="applyDashboardFilters()">
+                <option value="">All Types</option>
+                <option value="University">University (Semester)</option>
+                <option value="Internal">Internal</option>
+            </select>
+        </div>
+        <div class="dash-filter-group" style="align-self:end;">
+            <button type="button" class="dash-filter-btn-reset" id="btnResetFilters" onclick="resetDashboardFilters()">
+                <i class="fa-solid fa-rotate-left"></i> Reset All Filters
+            </button>
+        </div>
+    </div>
+    <div class="dash-active-pills" id="activeFilterPills">
+        <span class="text-muted"><i class="fa-solid fa-sliders me-1"></i> Showing all data (No active filters)</span>
+    </div>
+</div>
+
 <!-- KPI CARDS -->
 <div class="kpi-grid" id="kpiGrid"></div>
+
+<!-- FILTERED RESULTS SECTION -->
+<div class="dash-results-card" id="dashResultsSection">
+    <div class="dash-results-header">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h5 class="m-0 fw-bold" style="color:var(--gray-900);font-size:1.05rem;">
+                <i class="fa-solid fa-table-list me-2" style="color:var(--purple-600);"></i>
+                <span>Filtered Examination Results</span>
+            </h5>
+            <span class="badge" id="resultsCountBadge" style="background:var(--purple-100);color:var(--purple-700);font-weight:700;font-size:0.75rem;padding:6px 12px;border-radius:20px;">
+                Loading...
+            </span>
+        </div>
+        <div class="dash-view-toggle btn-group btn-group-sm" role="group">
+            <button type="button" class="btn btn-outline-primary active" id="btnViewPlans" onclick="switchDashboardTab('plans')">
+                <i class="fa-solid fa-chair me-1"></i> Seating Plans (<span id="tabPlansCount">0</span>)
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="btnViewStudents" onclick="switchDashboardTab('students')">
+                <i class="fa-solid fa-users me-1"></i> Matching Students (<span id="tabStudentsCount">0</span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- SEATING PLANS TAB -->
+    <div id="plansTabContent" class="dash-tab-pane">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="dashPlansTable">
+                <thead style="background:var(--purple-50);color:var(--purple-900);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">
+                    <tr>
+                        <th>Hall Name</th>
+                        <th>Exam Date</th>
+                        <th>Session / Time</th>
+                        <th>Exam Type</th>
+                        <th>Department(s)</th>
+                        <th style="text-align:center;">Allocated Seats</th>
+                        <th>Subject(s)</th>
+                        <th style="text-align:right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="dashPlansTableBody" style="font-size:0.85rem;">
+                </tbody>
+            </table>
+        </div>
+        <div id="plansEmptyState" class="p-4 text-center text-muted" style="display:none;">
+            <i class="fa-solid fa-inbox fa-2x mb-2 d-block" style="opacity:0.35;"></i>
+            <span id="plansEmptyText">No seating plans found matching the selected filter criteria.</span>
+            <div class="mt-2">
+                <a href="allocation.html" class="btn btn-sm btn-primary" style="background:var(--purple-600);border-color:var(--purple-600);font-weight:600;">
+                    <i class="fa-solid fa-plus me-1"></i> Create Seating Plan
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MATCHING STUDENTS TAB -->
+    <div id="studentsTabContent" class="dash-tab-pane" style="display:none;">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="dashStudentsTable">
+                <thead style="background:var(--purple-50);color:var(--purple-900);font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;">
+                    <tr>
+                        <th style="width:60px;text-align:center;">#</th>
+                        <th>Student Name</th>
+                        <th>Register Number</th>
+                        <th>Department</th>
+                        <th>Year / Batch</th>
+                        <th style="text-align:center;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="dashStudentsTableBody" style="font-size:0.85rem;">
+                </tbody>
+            </table>
+        </div>
+        <div id="studentsEmptyState" class="p-4 text-center text-muted" style="display:none;">
+            <i class="fa-solid fa-user-slash fa-2x mb-2 d-block" style="opacity:0.35;"></i>
+            <span>No students found matching the selected Department and Year.</span>
+        </div>
+        <div id="studentsPaginationBar" class="d-flex justify-content-between align-items-center p-3" style="border-top:1px solid var(--gray-200);background:var(--gray-50);font-size:0.8rem;">
+        </div>
+    </div>
+</div>
 
 <!-- QUICK ACTIONS -->
 <h5 class="fw-bold mb-3" style="color:var(--gray-900);"><i class="fa-solid fa-bolt me-2" style="color:var(--purple-500);"></i>Quick Actions</h5>
@@ -140,7 +452,7 @@ body { background: var(--dash-bg) !important; }
 
 <script>
 (function() {
-    // Date/time
+    // Date/time topbar initialization
     const now = new Date();
     const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -148,40 +460,411 @@ body { background: var(--dash-bg) !important; }
     document.getElementById('topbarTime').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     document.getElementById('academicYear').textContent = `Academic Year ${now.getFullYear()}-${now.getFullYear()+1}`;
 
-    // KPI data
-    const totalStudents = Students.count();
-    const allDepts = {};
-    Students.getAll().filter(s => !s.stu_status?.startsWith('Discontinu')).forEach(s => {
-        const d = s.stu_dept || getStudentDept(s.stu_regno);
-        if (d) allDepts[d] = true;
-    });
-    const totalDepartments = Object.keys(allDepts).length;
-    const totalHalls = Halls.getNames().length;
+    let currentDashTab = 'plans';
+    let studentPage = 1;
+    const STUDENT_PAGE_SIZE = 15;
 
-    const allocs = SeatAllocations.getAll();
-    const allocatedStudents = allocs.filter(a => a.reg_no).length;
-    const totalSeats = allocs.length;
-    const remainingSeats = totalSeats - allocatedStudents;
-    const huPct = totalSeats > 0 ? Math.round((allocatedStudents / totalSeats) * 1000) / 10 : 0;
+    // Populate department options dynamically
+    function populateDeptFilter() {
+        const select = document.getElementById('filterDept');
+        if (!select) return;
+        const currentVal = select.value;
+        const deptsSet = new Set(Object.keys(typeof DEPT_TO_CODE !== 'undefined' ? DEPT_TO_CODE : {}));
+        
+        try {
+            Students.getAll().forEach(s => {
+                const d = s.stu_dept || (typeof getStudentDept === 'function' ? getStudentDept(s.stu_regno) : '');
+                if (d) deptsSet.add(d);
+            });
+            SeatAllocations.getAll().forEach(a => {
+                const d = a.department || (typeof getStudentDept === 'function' ? getStudentDept(a.reg_no) : '');
+                if (d) deptsSet.add(d);
+            });
+        } catch (e) {
+            console.error('Error reading departments:', e);
+        }
 
-    const kpis = [
-        { icon: 'fa-graduation-cap', color: 'var(--blue-500)', bg: 'var(--blue-100)', value: totalStudents.toLocaleString(), label: 'Registered Students', pct: 100 },
-        { icon: 'fa-building-columns', color: 'var(--purple-500)', bg: 'var(--purple-100)', value: totalDepartments, label: 'Total Departments', pct: 100 },
-        { icon: 'fa-door-open', color: 'var(--indigo-500)', bg: 'var(--indigo-100)', value: totalHalls, label: 'Exam Halls', pct: 100 },
-        { icon: 'fa-circle-check', color: 'var(--green-500)', bg: 'var(--green-100)', value: allocatedStudents.toLocaleString(), label: 'Allocated Seats', pct: huPct },
-        { icon: 'fa-couch', color: 'var(--orange-500)', bg: 'var(--orange-100)', value: remainingSeats.toLocaleString(), label: 'Remaining Capacity', pct: 100 },
-    ];
+        const sortedDepts = [...deptsSet].sort();
+        select.innerHTML = '<option value="">All Departments</option>' +
+            sortedDepts.map(d => `<option value="${escapeHtml(d)}" ${d === currentVal ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('');
+    }
 
-    document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
-        <div class="kpi-card">
-            <div class="kpi-header">
-                <div class="kpi-icon" style="background:${k.bg};color:${k.color};"><i class="fa-solid ${k.icon}"></i></div>
+    // Populate hall options dynamically
+    function populateHallFilter() {
+        const select = document.getElementById('filterHall');
+        if (!select) return;
+        const currentVal = select.value;
+        const hallNames = Halls.getNames();
+        select.innerHTML = '<option value="">All Halls</option>' +
+            hallNames.map(h => `<option value="${escapeHtml(h)}" ${h === currentVal ? 'selected' : ''}>${escapeHtml(h)}</option>`).join('');
+    }
+
+    // Match student / allocation registration number with selected Year
+    function matchYear(regNo, yearVal) {
+        if (!yearVal) return true;
+        if (!regNo || regNo.length < 6) return false;
+        const batchDigits = regNo.substring(4, 6); // e.g. "23"
+        const fullBatchYear = '20' + batchDigits; // e.g. "2023"
+        const yStr = String(yearVal).trim();
+
+        // Direct match with batch digits or full 4-digit year
+        if (yStr === batchDigits || yStr === fullBatchYear) return true;
+
+        // Study Year mapping:
+        // 1st Year: Batch 2025, 2024
+        // 2nd Year: Batch 2023
+        // 3rd Year: Batch 2022
+        // 4th Year: Batch 2021, 2020
+        const studyMap = {
+            '1': ['25', '24', '2025', '2024'],
+            '2': ['23', '2023'],
+            '3': ['22', '2022'],
+            '4': ['21', '20', '2021', '2020']
+        };
+
+        if (studyMap[yStr] && (studyMap[yStr].includes(batchDigits) || studyMap[yStr].includes(fullBatchYear))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    function getStudentYearLabel(regNo) {
+        if (!regNo || regNo.length < 6) return '-';
+        const b = regNo.substring(4, 6);
+        if (b === '25' || b === '24') return `1st Year (${'20' + b})`;
+        if (b === '23') return `2nd Year (${'20' + b})`;
+        if (b === '22') return `3rd Year (${'20' + b})`;
+        if (b === '21' || b === '20') return `4th Year (${'20' + b})`;
+        return `Batch 20${b}`;
+    }
+
+    window.switchDashboardTab = function(tab) {
+        currentDashTab = tab;
+        const btnPlans = document.getElementById('btnViewPlans');
+        const btnStudents = document.getElementById('btnViewStudents');
+        const panePlans = document.getElementById('plansTabContent');
+        const paneStudents = document.getElementById('studentsTabContent');
+
+        if (tab === 'plans') {
+            btnPlans.classList.add('active');
+            btnStudents.classList.remove('active');
+            panePlans.style.display = '';
+            paneStudents.style.display = 'none';
+        } else {
+            btnStudents.classList.add('active');
+            btnPlans.classList.remove('active');
+            paneStudents.style.display = '';
+            panePlans.style.display = 'none';
+        }
+    };
+
+    window.resetDashboardFilters = function() {
+        document.getElementById('filterDept').value = '';
+        document.getElementById('filterYear').value = '';
+        document.getElementById('filterDate').value = '';
+        document.getElementById('filterHall').value = '';
+        document.getElementById('filterExamType').value = '';
+        studentPage = 1;
+        applyDashboardFilters();
+    };
+
+    window.removeFilter = function(filterName) {
+        if (filterName === 'dept') document.getElementById('filterDept').value = '';
+        if (filterName === 'year') document.getElementById('filterYear').value = '';
+        if (filterName === 'date') document.getElementById('filterDate').value = '';
+        if (filterName === 'hall') document.getElementById('filterHall').value = '';
+        if (filterName === 'examType') document.getElementById('filterExamType').value = '';
+        studentPage = 1;
+        applyDashboardFilters();
+    };
+
+    window.changeStudentPage = function(p) {
+        studentPage = p;
+        applyDashboardFilters(false);
+    };
+
+    window.applyDashboardFilters = function(resetStudentPagination = true) {
+        if (resetStudentPagination) studentPage = 1;
+
+        const dept = document.getElementById('filterDept').value.trim();
+        const year = document.getElementById('filterYear').value.trim();
+        const date = document.getElementById('filterDate').value.trim();
+        const hall = document.getElementById('filterHall').value.trim();
+        const examType = document.getElementById('filterExamType').value.trim();
+
+        // 1. Render Active Filter Pills
+        const pillsContainer = document.getElementById('activeFilterPills');
+        const pills = [];
+        if (dept) {
+            pills.push(`<span class="dash-pill"><i class="fa-solid fa-building-columns"></i> Dept: ${escapeHtml(dept)} <span class="dash-pill-remove" onclick="removeFilter('dept')">&times;</span></span>`);
+        }
+        if (year) {
+            let yrLabel = year;
+            if (year === '1') yrLabel = '1st Year';
+            else if (year === '2') yrLabel = '2nd Year';
+            else if (year === '3') yrLabel = '3rd Year';
+            else if (year === '4') yrLabel = '4th Year';
+            else yrLabel = `Batch ${year}`;
+            pills.push(`<span class="dash-pill"><i class="fa-solid fa-graduation-cap"></i> Year: ${escapeHtml(yrLabel)} <span class="dash-pill-remove" onclick="removeFilter('year')">&times;</span></span>`);
+        }
+        if (date) {
+            pills.push(`<span class="dash-pill"><i class="fa-regular fa-calendar-days"></i> Date: ${formatDate(date)} <span class="dash-pill-remove" onclick="removeFilter('date')">&times;</span></span>`);
+        }
+        if (hall) {
+            pills.push(`<span class="dash-pill"><i class="fa-solid fa-door-open"></i> Hall: ${escapeHtml(hall)} <span class="dash-pill-remove" onclick="removeFilter('hall')">&times;</span></span>`);
+        }
+        if (examType) {
+            pills.push(`<span class="dash-pill"><i class="fa-solid fa-file-signature"></i> Type: ${escapeHtml(examType)} <span class="dash-pill-remove" onclick="removeFilter('examType')">&times;</span></span>`);
+        }
+
+        if (pills.length === 0) {
+            pillsContainer.innerHTML = '<span class="text-muted"><i class="fa-solid fa-sliders me-1"></i> Showing all data (No active filters)</span>';
+        } else {
+            pillsContainer.innerHTML = `<span class="fw-bold me-1 text-secondary" style="font-size:0.75rem;">Active Filters:</span>` + pills.join(' ') + ` <button type="button" class="btn btn-link btn-sm p-0 ms-2 text-decoration-none" style="font-size:0.73rem;color:var(--purple-600);" onclick="resetDashboardFilters()">Clear all</button>`;
+        }
+
+        // 2. Filter Students
+        let filteredStudents = Students.getAll().filter(s => !s.stu_status?.startsWith('Discontinu'));
+        if (dept) {
+            const deptUpper = dept.toUpperCase();
+            filteredStudents = filteredStudents.filter(s => {
+                const d = (s.stu_dept || getStudentDept(s.stu_regno) || '').toUpperCase();
+                return d === deptUpper;
+            });
+        }
+        if (year) {
+            filteredStudents = filteredStudents.filter(s => matchYear(s.stu_regno, year));
+        }
+
+        // 3. Filter Allocations
+        const allAllocations = SeatAllocations.getAll();
+        let filteredAllocations = allAllocations.filter(a => {
+            if (dept) {
+                const d = (a.department || getStudentDept(a.reg_no) || '').toUpperCase();
+                if (d !== dept.toUpperCase()) return false;
+            }
+            if (year) {
+                if (!matchYear(a.reg_no, year)) return false;
+            }
+            if (date) {
+                const matchExact = a.exam_date === date;
+                const matchRange = a.start_date && a.end_date && date >= a.start_date && date <= a.end_date;
+                if (!matchExact && !matchRange) return false;
+            }
+            if (hall) {
+                if (a.hall_no !== hall) return false;
+            }
+            if (examType) {
+                const aType = a.exam_type || 'University';
+                if (aType !== examType) return false;
+            }
+            return true;
+        });
+
+        // 4. Update KPI Cards
+        const totalStudents = filteredStudents.length;
+        const allDepts = {};
+        filteredStudents.forEach(s => {
+            const d = s.stu_dept || getStudentDept(s.stu_regno);
+            if (d) allDepts[d] = true;
+        });
+        filteredAllocations.forEach(a => {
+            const d = a.department || getStudentDept(a.reg_no);
+            if (d) allDepts[d] = true;
+        });
+        const totalDepartments = dept ? 1 : Object.keys(allDepts).length;
+
+        const matchedHalls = new Set();
+        filteredAllocations.forEach(a => {
+            if (a.hall_no) matchedHalls.add(a.hall_no);
+        });
+        const anyFilter = dept || year || date || hall || examType;
+        const totalHalls = anyFilter ? matchedHalls.size : Halls.getNames().length;
+
+        const allocatedStudents = filteredAllocations.filter(a => a.reg_no).length;
+        const qpNeeded = allocatedStudents;
+        const capacityBase = anyFilter
+            ? Math.max(allocatedStudents, (matchedHalls.size || 1) * 25)
+            : (allAllocations.length || Halls.getNames().length * 25);
+        const remainingSeats = Math.max(0, capacityBase - allocatedStudents);
+        const huPct = capacityBase > 0 ? Math.min(100, Math.round((allocatedStudents / capacityBase) * 1000) / 10) : 0;
+
+        const kpis = [
+            { icon: 'fa-graduation-cap', color: 'var(--blue-500)', bg: 'var(--blue-100)', value: totalStudents.toLocaleString(), label: (dept || year) ? 'Matching Students' : 'Registered Students', pct: 100 },
+            { icon: 'fa-building-columns', color: 'var(--purple-500)', bg: 'var(--purple-100)', value: totalDepartments, label: 'Departments', pct: 100 },
+            { icon: 'fa-door-open', color: 'var(--indigo-500)', bg: 'var(--indigo-100)', value: totalHalls, label: anyFilter ? 'Active Exam Halls' : 'Exam Halls', pct: 100 },
+            { icon: 'fa-circle-check', color: 'var(--green-500)', bg: 'var(--green-100)', value: allocatedStudents.toLocaleString(), label: 'Allocated Seats', pct: huPct },
+            { icon: 'fa-file-lines', color: '#e11d48', bg: '#ffe4e6', value: qpNeeded.toLocaleString(), label: 'Question Paper Needed', pct: 100, link: 'reports.html' },
+            { icon: 'fa-couch', color: 'var(--orange-500)', bg: 'var(--orange-100)', value: remainingSeats.toLocaleString(), label: 'Remaining Capacity', pct: 100 },
+        ];
+
+        document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+            <div class="kpi-card" ${k.link ? `onclick="window.location.href='${k.link}'" style="cursor:pointer;" title="Click to view Question Paper Need Matrix"` : ''}>
+                <div class="kpi-header">
+                    <div class="kpi-icon" style="background:${k.bg};color:${k.color};"><i class="fa-solid ${k.icon}"></i></div>
+                    ${k.link ? `<span class="badge" style="background:${k.bg};color:${k.color};font-size:0.68rem;padding:4px 8px;border-radius:12px;font-weight:700;"><i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View</span>` : ''}
+                </div>
+                <div class="kpi-value">${k.value}</div>
+                <div class="kpi-label">${k.label}</div>
+                <div class="kpi-progress"><div class="kpi-progress-bar" style="background:${k.color}; width:${k.pct}%;"></div></div>
             </div>
-            <div class="kpi-value">${k.value}</div>
-            <div class="kpi-label">${k.label}</div>
-            <div class="kpi-progress"><div class="kpi-progress-bar" style="background:${k.color}; width:${k.pct}%;"></div></div>
-        </div>
-    `).join('');
+        `).join('');
+
+        // 5. Group Filtered Allocations into Plans for Table
+        const planMap = {};
+        filteredAllocations.forEach(a => {
+            const isUniv = (a.exam_type || 'University') === 'University';
+            const key = isUniv
+                ? `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.session}`
+                : `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.start_date || ''}|${a.end_date || ''}`;
+
+            if (!planMap[key]) {
+                planMap[key] = {
+                    hall_no: a.hall_no,
+                    exam_date: a.exam_date,
+                    exam_type: a.exam_type || 'University',
+                    session: a.session || '',
+                    from_time: a.from_time || '',
+                    to_time: a.to_time || '',
+                    start_date: a.start_date || '',
+                    end_date: a.end_date || '',
+                    depts: new Set(),
+                    subjects: new Set(),
+                    count: 0
+                };
+            }
+            const d = a.department || getStudentDept(a.reg_no);
+            if (d) planMap[key].depts.add(d);
+            if (a.subject_name) planMap[key].subjects.add(a.subject_name);
+            if (a.reg_no) planMap[key].count++;
+        });
+
+        const plans = Object.values(planMap).sort((a, b) => (b.exam_date || '').localeCompare(a.exam_date || ''));
+
+        // Update Counts
+        document.getElementById('tabPlansCount').textContent = plans.length;
+        document.getElementById('tabStudentsCount').textContent = filteredStudents.length.toLocaleString();
+        document.getElementById('resultsCountBadge').textContent = `${plans.length} plan${plans.length === 1 ? '' : 's'} · ${allocatedStudents} allocated seat${allocatedStudents === 1 ? '' : 's'}`;
+
+        // 6. Render Plans Table
+        const plansTbody = document.getElementById('dashPlansTableBody');
+        const plansEmpty = document.getElementById('plansEmptyState');
+        const plansTable = document.getElementById('dashPlansTable');
+
+        if (plans.length === 0) {
+            plansTable.style.display = 'none';
+            plansEmpty.style.display = '';
+            const filterApplied = anyFilter;
+            document.getElementById('plansEmptyText').textContent = filterApplied
+                ? 'No seating plans match the selected filter combination.'
+                : 'No examination seating plans have been saved yet.';
+        } else {
+            plansTable.style.display = '';
+            plansEmpty.style.display = 'none';
+            plansTbody.innerHTML = plans.map(p => {
+                const deptsList = [...p.depts].map(d => `<span class="badge" style="background:var(--purple-100);color:var(--purple-700);font-weight:600;margin-right:4px;">${escapeHtml(d)}</span>`).join('') || '<span class="text-muted">-</span>';
+                const subjsList = [...p.subjects].map(s => escapeHtml(s)).join(', ') || '<span class="text-muted">Standard</span>';
+                const sessDisplay = p.exam_type === 'Internal'
+                    ? (p.from_time && p.to_time ? `${p.from_time} – ${p.to_time}` : (p.session || 'Internal'))
+                    : (p.session === 'AN' ? 'AN (02:00 PM – 05:00 PM)' : 'FN (10:00 AM – 01:00 PM)');
+                const typeBadge = p.exam_type === 'Internal'
+                    ? `<span class="badge bg-warning text-dark font-weight-bold">Internal</span>`
+                    : `<span class="badge bg-primary">University</span>`;
+                
+                const editUrl = `allocation.html?edit_hall=${encodeURIComponent(p.hall_no)}&edit_date=${encodeURIComponent(p.exam_date)}&edit_type=${encodeURIComponent(p.exam_type)}&edit_session=${encodeURIComponent(p.session)}&edit_from=${encodeURIComponent(p.from_time)}&edit_to=${encodeURIComponent(p.to_time)}`;
+
+                return `<tr>
+                    <td>
+                        <span class="d-inline-flex align-items-center gap-2 fw-bold text-dark">
+                            <i class="fa-solid fa-door-open" style="color:var(--purple-600);"></i>
+                            ${escapeHtml(p.hall_no)}
+                        </span>
+                    </td>
+                    <td class="fw-semibold text-secondary">${formatDate(p.exam_date)}</td>
+                    <td><span class="badge" style="background:var(--gray-100);color:var(--gray-700);font-weight:600;">${escapeHtml(sessDisplay)}</span></td>
+                    <td>${typeBadge}</td>
+                    <td>${deptsList}</td>
+                    <td style="text-align:center;">
+                        <span class="badge bg-success-subtle text-success px-2 py-1 fw-bold" style="font-size:0.8rem;">
+                            ${p.count} seats
+                        </span>
+                    </td>
+                    <td class="text-truncate" style="max-width:220px;" title="${escapeHtml([...p.subjects].join(', '))}">
+                        <small>${subjsList}</small>
+                    </td>
+                    <td style="text-align:right;">
+                        <a href="${editUrl}" class="btn btn-sm btn-outline-primary" style="font-size:0.75rem;padding:4px 10px;font-weight:600;">
+                            <i class="fa-solid fa-eye me-1"></i> View Plan
+                        </a>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        // 7. Render Students Table (Paginated)
+        const studentsTbody = document.getElementById('dashStudentsTableBody');
+        const studentsEmpty = document.getElementById('studentsEmptyState');
+        const studentsTable = document.getElementById('dashStudentsTable');
+        const paginationBar = document.getElementById('studentsPaginationBar');
+
+        if (filteredStudents.length === 0) {
+            studentsTable.style.display = 'none';
+            studentsEmpty.style.display = '';
+            paginationBar.style.display = 'none';
+        } else {
+            studentsTable.style.display = '';
+            studentsEmpty.style.display = 'none';
+            paginationBar.style.display = '';
+
+            const totalPages = Math.max(1, Math.ceil(filteredStudents.length / STUDENT_PAGE_SIZE));
+            if (studentPage > totalPages) studentPage = totalPages;
+            const startIndex = (studentPage - 1) * STUDENT_PAGE_SIZE;
+            const pageItems = filteredStudents.slice(startIndex, startIndex + STUDENT_PAGE_SIZE);
+
+            studentsTbody.innerHTML = pageItems.map((s, idx) => {
+                const fullName = getStudentFullName(s);
+                const stuDept = s.stu_dept || getStudentDept(s.stu_regno) || '-';
+                const stuYear = getStudentYearLabel(s.stu_regno);
+                const isDisc = (s.stu_status || '').toLowerCase().includes('discontinu');
+
+                return `<tr>
+                    <td style="text-align:center;color:var(--gray-500);font-weight:600;">${startIndex + idx + 1}</td>
+                    <td class="fw-semibold text-dark">${escapeHtml(fullName)}</td>
+                    <td><code style="font-weight:700;color:var(--purple-700);">${escapeHtml(s.stu_regno)}</code></td>
+                    <td><span class="badge" style="background:var(--purple-100);color:var(--purple-700);font-weight:600;">${escapeHtml(stuDept)}</span></td>
+                    <td><span class="text-secondary" style="font-size:0.8rem;">${escapeHtml(stuYear)}</span></td>
+                    <td style="text-align:center;">
+                        ${isDisc 
+                            ? '<span class="badge bg-danger-subtle text-danger px-2 py-1">Discontinued</span>'
+                            : '<span class="badge bg-success-subtle text-success px-2 py-1">Active</span>'}
+                    </td>
+                </tr>`;
+            }).join('');
+
+            paginationBar.innerHTML = `
+                <div class="text-muted">
+                    Showing <strong>${startIndex + 1}</strong> to <strong>${Math.min(startIndex + STUDENT_PAGE_SIZE, filteredStudents.length)}</strong> of <strong>${filteredStudents.length.toLocaleString()}</strong> students
+                </div>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary" ${studentPage <= 1 ? 'disabled' : ''} onclick="changeStudentPage(${studentPage - 1})">
+                        <i class="fa-solid fa-chevron-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" disabled style="font-weight:600;">
+                        Page ${studentPage} / ${totalPages}
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" ${studentPage >= totalPages ? 'disabled' : ''} onclick="changeStudentPage(${studentPage + 1})">
+                        Next <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+            `;
+        }
+    };
+
+    // Initialize dropdowns & initial filter state
+    populateDeptFilter();
+    populateHallFilter();
+    applyDashboardFilters();
 })();
 </script>
 

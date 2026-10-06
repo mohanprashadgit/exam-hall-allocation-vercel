@@ -109,7 +109,19 @@ const Students = {
     find(reg_no) {
         if (!reg_no) return null;
         const all = this.getAll();
-        return all.find(s => s.stu_regno === reg_no || (s.stu_regno && s.stu_regno.endsWith(reg_no))) || null;
+        const rStr = String(reg_no).trim();
+        let found = all.find(s => s.stu_regno === rStr);
+        if (found) return found;
+        if (rStr.length <= 3 && /^\d+$/.test(rStr)) {
+            const padded = rStr.padStart(3, '0');
+            found = all.find(s => s.stu_regno && s.stu_regno.endsWith(padded));
+            if (found) return found;
+        }
+        if (rStr.length > 3) {
+            found = all.find(s => s.stu_regno && s.stu_regno.endsWith(rStr));
+            if (found) return found;
+        }
+        return null;
     },
 
     findBatch(reg_nos) {
@@ -287,24 +299,89 @@ const SeatAllocations = {
     },
 
     /**
-     * Save a plan (delete old if editing, insert new seats)
+     * Check if a specific hall is already allocated for the given date, session/time, and exam type
+     */
+    isHallAllocated(hall_no, exam_date, exam_type, session, from_time, to_time, origPlan = null, to_date = '') {
+        if (!hall_no || !exam_date) return false;
+        const normHall = String(hall_no).trim().toLowerCase();
+        const allocs = this.getAll().filter(a => {
+            if (origPlan && this._matchesPlan(a, origPlan)) return false;
+            return true;
+        });
+
+        const targetType = exam_type || 'University';
+        if (targetType === 'University') {
+            const targetSess = String(session || 'FN').trim().toUpperCase();
+            const normDate = String(exam_date).trim();
+            return allocs.some(a => {
+                if (!a.hall_no || String(a.hall_no).trim().toLowerCase() !== normHall) return false;
+                if (!a.exam_date || String(a.exam_date).trim() !== normDate) return false;
+                const aType = a.exam_type || 'University';
+                if (aType !== 'University') return false;
+                const aSess = String(a.session || 'FN').trim().toUpperCase();
+                return aSess === targetSess;
+            });
+        } else {
+            // Internal Exam
+            return allocs.some(a => {
+                if (!a.hall_no || String(a.hall_no).trim().toLowerCase() !== normHall) return false;
+                const aType = a.exam_type || 'University';
+                if (aType !== 'Internal') return false;
+                const aStart = a.start_date || a.exam_date;
+                const aEnd = a.end_date || a.exam_date;
+                const myStart = String(exam_date).trim();
+                const myEnd = String(to_date || exam_date).trim();
+                const inRange = (myStart <= aEnd && myEnd >= aStart);
+                if (!inRange) return false;
+                if (from_time && to_time && a.from_time && a.to_time) {
+                    return timeOverlap(from_time, to_time, a.from_time, a.to_time);
+                }
+                return true;
+            });
+        }
+    },
+
+    /**
+     * Get set of all hall names already allocated for given parameters
+     */
+    getAllocatedHalls(exam_date, exam_type, session, from_time, to_time, origPlan = null, to_date = '') {
+        const halls = Halls.getNames();
+        const set = new Set();
+        halls.forEach(h => {
+            if (this.isHallAllocated(h, exam_date, exam_type, session, from_time, to_time, origPlan, to_date)) {
+                set.add(h);
+            }
+        });
+        return set;
+    },
+
+    /**
+     * Save a plan (rejects duplicate hall allocation; delete old if editing, insert new seats)
      */
     savePlan(seats, origPlan = null) {
+        if (!seats || seats.length === 0) return { ok: false, error: 'No seats to save.' };
+        const first = seats[0];
+
+        // Backend validation: reject duplicate hall allocation
+        const isDup = this.isHallAllocated(
+            first.hall_no, first.exam_date, first.exam_type, first.session,
+            first.from_time, first.to_time, origPlan, first.end_date
+        );
+        if (isDup) {
+            const isUniv = (first.exam_type || 'University') === 'University';
+            const dateStr = formatDateDDMMYYYY(first.exam_date);
+            const sessStr = isUniv ? (first.session ? ` ${first.session}` : '') : (first.start_date && first.end_date ? ` (${formatDateDDMMYYYY(first.start_date)} to ${formatDateDDMMYYYY(first.end_date)})` : '');
+            return {
+                ok: false,
+                error: `⚠️ Already Allocated: ${first.hall_no} is already allocated for ${dateStr}${sessStr}. Please select another hall.`
+            };
+        }
+
         let allocs = this.getAll();
 
         // Remove old plan if editing
         if (origPlan) {
             allocs = allocs.filter(a => !this._matchesPlan(a, origPlan));
-        } else if (seats.length > 0) {
-            // Also replace existing plan for same hall + date + session/type
-            const first = seats[0];
-            allocs = allocs.filter(a => {
-                if (a.hall_no === first.hall_no && a.exam_date === first.exam_date && a.exam_type === first.exam_type) {
-                    if (first.exam_type === 'University') return a.session !== first.session;
-                    return false;
-                }
-                return true;
-            });
         }
 
         allocs.push(...seats);
@@ -325,7 +402,7 @@ const SeatAllocations = {
     /**
      * Check for duplicate/conflicts
      */
-    checkConflicts(hall_no, exam_date, exam_type, session, from_time, to_time, left_nos, right_nos, origPlan) {
+    checkConflicts(hall_no, exam_date, exam_type, session, from_time, to_time, left_nos, right_nos, origPlan, end_date = '') {
         const conflicts = [];
         const allocs = this.getAll().filter(a => {
             if (origPlan && this._matchesPlan(a, origPlan)) return false;
@@ -334,21 +411,11 @@ const SeatAllocations = {
 
         // Hall conflict check
         if (hall_no && exam_date) {
-            if (exam_type === 'University' && session) {
-                const dup = allocs.some(a => a.hall_no === hall_no && a.exam_date === exam_date && a.exam_type === 'University' && a.session === session);
-                if (dup) conflicts.push(`Hall <strong>${escapeHtml(hall_no)}</strong> is already allocated for <strong>${formatDate(exam_date)}</strong> (${session} session).`);
-            } else if (exam_type === 'Internal' && from_time && to_time) {
-                const overlapping = allocs.filter(a => a.hall_no === hall_no && a.exam_date === exam_date && a.exam_type === 'Internal' && a.from_time && a.to_time);
-                const seen = new Set();
-                for (const a of overlapping) {
-                    const key = `${a.from_time}-${a.to_time}`;
-                    if (seen.has(key)) continue;
-                    seen.add(key);
-                    if (timeOverlap(from_time, to_time, a.from_time, a.to_time)) {
-                        conflicts.push(`Hall <strong>${escapeHtml(hall_no)}</strong> has an overlapping Internal Exam allocation (Existing: <strong>${escapeHtml(a.from_time)} – ${escapeHtml(a.to_time)}</strong>) on <strong>${formatDate(exam_date)}</strong>.`);
-                        break;
-                    }
-                }
+            if (this.isHallAllocated(hall_no, exam_date, exam_type, session, from_time, to_time, origPlan, end_date)) {
+                const isUniv = (exam_type || 'University') === 'University';
+                const dateDisplay = formatDateDDMMYYYY(exam_date);
+                const sessDisplay = isUniv ? (session ? ` ${session}` : '') : (end_date ? ` (${dateDisplay} to ${formatDateDDMMYYYY(end_date)})` : '');
+                conflicts.push(`⚠️ Already Allocated: Hall <strong>${escapeHtml(hall_no)}</strong> is already allocated for <strong>${dateDisplay}${sessDisplay}</strong>. Please select another hall.`);
             }
         }
 
@@ -444,6 +511,18 @@ function formatDate(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return `${String(d.getDate()).padStart(2,'0')}-${months[d.getMonth()]}-${d.getFullYear()}`;
+}
+
+function formatDateDDMMYYYY(dateStr) {
+    if (!dateStr) return '';
+    const trimmed = String(dateStr).trim();
+    const parts = trimmed.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    const d = new Date(trimmed.includes('T') ? trimmed : trimmed + 'T00:00:00');
+    if (isNaN(d.getTime())) return trimmed;
+    return `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
 }
 
 function formatDateDMY(dateStr) {
