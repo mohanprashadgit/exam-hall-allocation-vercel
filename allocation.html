@@ -1181,8 +1181,10 @@
                         <label class="font-weight-bold">Category</label>
                         <select id="newHallCategory" class="form-control">
                             <option value="Exam Halls">Exam Halls</option>
+                            <option value="Drawing Halls">Drawing Halls</option>
                             <option value="Reading Halls">Reading Halls</option>
-                            <option value="Lab Halls">Lab Halls</option>
+                            <option value="CSE Classrooms">CSE Classrooms</option>
+                            <option value="AI & DS Classrooms">AI & DS Classrooms</option>
                             <option value="Other Venues" selected>Other Venues</option>
                         </select>
                     </div>
@@ -1349,14 +1351,27 @@
                             <span class="hall-status-badge ${badgeClass}">${badgeText}</span>
                         </div>`;
                     });
+                    if (cat === 'Other Venues') {
+                        html += `<div class="hall-option" data-value="+ Other Hall" style="background:var(--v50);color:var(--v600);font-weight:700;">
+                            <div class="hall-opt-left">
+                                <span class="hall-opt-icon"><i class="fa-solid fa-plus text-primary"></i></span>
+                                <span class="hall-opt-text">+ Other Hall</span>
+                            </div>
+                            <span class="hall-opt-badge" style="background:var(--v100);color:var(--v600);">NEW</span>
+                        </div>`;
+                    }
                 }
-                html += `<div class="hall-option" data-value="+ Other Hall" style="background:var(--v50);color:var(--v600);font-weight:700;">
-                    <div class="hall-opt-left">
-                        <span class="hall-opt-icon"><i class="fa-solid fa-plus text-primary"></i></span>
-                        <span class="hall-opt-text">+ Other Hall</span>
-                    </div>
-                    <span class="hall-opt-badge" style="background:var(--v100);color:var(--v600);">NEW</span>
-                </div>`;
+
+                if (!groups['Other Venues']) {
+                    html += `<div class="hall-group-label">Other Venues</div>`;
+                    html += `<div class="hall-option" data-value="+ Other Hall" style="background:var(--v50);color:var(--v600);font-weight:700;">
+                        <div class="hall-opt-left">
+                            <span class="hall-opt-icon"><i class="fa-solid fa-plus text-primary"></i></span>
+                            <span class="hall-opt-text">+ Other Hall</span>
+                        </div>
+                        <span class="hall-opt-badge" style="background:var(--v100);color:var(--v600);">NEW</span>
+                    </div>`;
+                }
                 document.getElementById('hallOptionsList').innerHTML = html;
             }
             renderHallOptions();

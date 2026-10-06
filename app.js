@@ -27,41 +27,69 @@ const DB = {
 // ═══════════════════════════════════════════════════════════════
 const Halls = {
     KEY: 'erp_halls',
+    VERSION_KEY: 'erp_halls_version',
+    CURRENT_VERSION: 'v2_venue_structure_2026',
 
     getAll() {
+        const curVer = localStorage.getItem(this.VERSION_KEY);
         let halls = DB.get(this.KEY);
-        if (!halls || halls.length === 0) {
-            halls = this._defaults();
+        if (!halls || halls.length === 0 || curVer !== this.CURRENT_VERSION) {
+            halls = this._migrateOrReset(halls);
             DB.set(this.KEY, halls);
+            localStorage.setItem(this.VERSION_KEY, this.CURRENT_VERSION);
         }
         return halls;
     },
 
     getNames() {
-        return this.getAll().map(h => h.hall_no).sort();
+        return this.getAll().map(h => h.hall_no);
     },
 
     getGrouped() {
         const halls = this.getAll();
+        const categoryOrder = [
+            'Exam Halls',
+            'Drawing Halls',
+            'Reading Halls',
+            'CSE Classrooms',
+            'AI & DS Classrooms',
+            'Other Venues'
+        ];
         const groups = {};
+        categoryOrder.forEach(cat => { groups[cat] = []; });
+
         halls.forEach(h => {
             const cat = h.category || 'Other Venues';
             if (!groups[cat]) groups[cat] = [];
             groups[cat].push(h);
         });
-        return groups;
+
+        const result = {};
+        categoryOrder.forEach(cat => {
+            if (groups[cat] && (groups[cat].length > 0 || cat === 'Other Venues')) {
+                result[cat] = groups[cat];
+            }
+        });
+        return result;
     },
 
     add(hall_no, category) {
         const halls = this.getAll();
-        if (halls.some(h => h.hall_no === hall_no)) return { ok: false, error: `Hall '${hall_no}' already exists.` };
+        const trimmed = (hall_no || '').trim();
+        if (!trimmed) return { ok: false, error: 'Please enter a valid venue name.' };
+        if (halls.some(h => h.hall_no.toLowerCase().trim() === trimmed.toLowerCase())) {
+            return { ok: false, error: `Hall '${trimmed}' already exists.` };
+        }
 
-        let icon = '<i class="fa-solid fa-building"></i>', badge_label = 'OTHER', badge_bg = '#ede9fe', badge_color = '#4c1d95';
-        if (category === 'Exam Halls')    { icon = '<i class="fa-solid fa-landmark"></i>'; badge_label = 'EXAM';  badge_bg = '#e8f0fe'; badge_color = '#3b5bdb'; }
-        if (category === 'Reading Halls') { icon = '<i class="fa-solid fa-book-open"></i>'; badge_label = 'READ';  badge_bg = '#e6f4ea'; badge_color = '#2e7d32'; }
-        if (category === 'Lab Halls')     { icon = '<i class="fa-solid fa-flask"></i>'; badge_label = 'LAB';   badge_bg = '#fef9c3'; badge_color = '#854d0e'; }
+        let icon = '<i class="fa-solid fa-building"></i>', badge_label = 'VENUE', badge_bg = '#ede9fe', badge_color = '#4c1d95';
+        if (category === 'Exam Halls')          { icon = '<i class="fa-solid fa-landmark"></i>'; badge_label = 'EXAM'; badge_bg = '#e8f0fe'; badge_color = '#3b5bdb'; }
+        else if (category === 'Drawing Halls')  { icon = '<i class="fa-solid fa-palette"></i>'; badge_label = 'DRAW'; badge_bg = '#fef3c7'; badge_color = '#b45309'; }
+        else if (category === 'Reading Halls')  { icon = '<i class="fa-solid fa-book-open"></i>'; badge_label = 'READ'; badge_bg = '#e6f4ea'; badge_color = '#2e7d32'; }
+        else if (category === 'CSE Classrooms') { icon = '<i class="fa-solid fa-laptop-code"></i>'; badge_label = 'CSE'; badge_bg = '#ede9fe'; badge_color = '#6d28d9'; }
+        else if (category === 'AI & DS Classrooms') { icon = '<i class="fa-solid fa-robot"></i>'; badge_label = 'AI&DS'; badge_bg = '#fce7f3'; badge_color = '#be185d'; }
+        else if (category === 'Other Venues')   { icon = '<i class="fa-solid fa-building"></i>'; badge_label = 'OTHER'; badge_bg = '#ede9fe'; badge_color = '#4c1d95'; }
 
-        const hall = { id: Date.now(), hall_no, category, icon, badge_label, badge_bg, badge_color, created_at: new Date().toISOString() };
+        const hall = { id: Date.now(), hall_no: trimmed, category, icon, badge_label, badge_bg, badge_color, created_at: new Date().toISOString() };
         halls.push(hall);
         DB.set(this.KEY, halls);
         return { ok: true, ...hall };
@@ -69,19 +97,47 @@ const Halls = {
 
     _defaults() {
         return [
+            // 🏛️ Exam Halls
             { id: 1, hall_no: 'Exam Hall-1', category: 'Exam Halls', icon: '<i class="fa-solid fa-landmark"></i>', badge_label: 'EXAM', badge_bg: '#e8f0fe', badge_color: '#3b5bdb' },
             { id: 2, hall_no: 'Exam Hall-2', category: 'Exam Halls', icon: '<i class="fa-solid fa-landmark"></i>', badge_label: 'EXAM', badge_bg: '#e8f0fe', badge_color: '#3b5bdb' },
-            { id: 3, hall_no: 'Exam Hall-3', category: 'Exam Halls', icon: '<i class="fa-solid fa-landmark"></i>', badge_label: 'EXAM', badge_bg: '#e8f0fe', badge_color: '#3b5bdb' },
-            { id: 4, hall_no: 'Exam Hall-4', category: 'Exam Halls', icon: '<i class="fa-solid fa-landmark"></i>', badge_label: 'EXAM', badge_bg: '#e8f0fe', badge_color: '#3b5bdb' },
-            { id: 5, hall_no: 'Exam Hall-5', category: 'Exam Halls', icon: '<i class="fa-solid fa-landmark"></i>', badge_label: 'EXAM', badge_bg: '#e8f0fe', badge_color: '#3b5bdb' },
-            { id: 6, hall_no: 'Reading Hall-1', category: 'Reading Halls', icon: '<i class="fa-solid fa-book-open"></i>', badge_label: 'READ', badge_bg: '#e6f4ea', badge_color: '#2e7d32' },
-            { id: 7, hall_no: 'Reading Hall-2', category: 'Reading Halls', icon: '<i class="fa-solid fa-book-open"></i>', badge_label: 'READ', badge_bg: '#e6f4ea', badge_color: '#2e7d32' },
-            { id: 8, hall_no: 'Reading Hall-3', category: 'Reading Halls', icon: '<i class="fa-solid fa-book-open"></i>', badge_label: 'READ', badge_bg: '#e6f4ea', badge_color: '#2e7d32' },
-            { id: 9, hall_no: 'Lab Hall-1', category: 'Lab Halls', icon: '<i class="fa-solid fa-flask"></i>', badge_label: 'LAB', badge_bg: '#fef9c3', badge_color: '#854d0e' },
-            { id: 10, hall_no: 'Lab Hall-2', category: 'Lab Halls', icon: '<i class="fa-solid fa-flask"></i>', badge_label: 'LAB', badge_bg: '#fef9c3', badge_color: '#854d0e' },
-            { id: 11, hall_no: 'Seminar Hall', category: 'Other Venues', icon: '<i class="fa-solid fa-microphone"></i>', badge_label: 'EVENT', badge_bg: '#ede9fe', badge_color: '#4c1d95' },
-            { id: 12, hall_no: 'Conference Hall', category: 'Other Venues', icon: '<i class="fa-solid fa-handshake"></i>', badge_label: 'EVENT', badge_bg: '#ede9fe', badge_color: '#4c1d95' },
+
+            // 🎨 Drawing Halls
+            { id: 3, hall_no: 'Drawing Hall-1', category: 'Drawing Halls', icon: '<i class="fa-solid fa-palette"></i>', badge_label: 'DRAW', badge_bg: '#fef3c7', badge_color: '#b45309' },
+            { id: 4, hall_no: 'Drawing Hall-2', category: 'Drawing Halls', icon: '<i class="fa-solid fa-palette"></i>', badge_label: 'DRAW', badge_bg: '#fef3c7', badge_color: '#b45309' },
+
+            // 📚 Reading Halls
+            { id: 5, hall_no: 'Reading Hall-1', category: 'Reading Halls', icon: '<i class="fa-solid fa-book-open"></i>', badge_label: 'READ', badge_bg: '#e6f4ea', badge_color: '#2e7d32' },
+            { id: 6, hall_no: 'Reading Hall-2', category: 'Reading Halls', icon: '<i class="fa-solid fa-book-open"></i>', badge_label: 'READ', badge_bg: '#e6f4ea', badge_color: '#2e7d32' },
+            { id: 7, hall_no: 'Reading Hall-3', category: 'Reading Halls', icon: '<i class="fa-solid fa-book-open"></i>', badge_label: 'READ', badge_bg: '#e6f4ea', badge_color: '#2e7d32' },
+
+            // 🏫 CSE Classrooms
+            { id: 8, hall_no: 'CSE 2nd Year Class', category: 'CSE Classrooms', icon: '<i class="fa-solid fa-laptop-code"></i>', badge_label: 'CSE', badge_bg: '#ede9fe', badge_color: '#6d28d9' },
+            { id: 9, hall_no: 'CSE 4th Year Class', category: 'CSE Classrooms', icon: '<i class="fa-solid fa-laptop-code"></i>', badge_label: 'CSE', badge_bg: '#ede9fe', badge_color: '#6d28d9' },
+
+            // 🤖 AI & DS Classrooms
+            { id: 10, hall_no: 'AI & DS 2nd Year Class', category: 'AI & DS Classrooms', icon: '<i class="fa-solid fa-robot"></i>', badge_label: 'AI&DS', badge_bg: '#fce7f3', badge_color: '#be185d' },
+            { id: 11, hall_no: 'AI & DS 3rd Year Class', category: 'AI & DS Classrooms', icon: '<i class="fa-solid fa-robot"></i>', badge_label: 'AI&DS', badge_bg: '#fce7f3', badge_color: '#be185d' },
+            { id: 12, hall_no: 'AI & DS 4th Year Class', category: 'AI & DS Classrooms', icon: '<i class="fa-solid fa-robot"></i>', badge_label: 'AI&DS', badge_bg: '#fce7f3', badge_color: '#be185d' },
         ];
+    },
+
+    _migrateOrReset(oldHalls) {
+        const defaults = this._defaults();
+        if (!oldHalls || !Array.isArray(oldHalls)) return defaults;
+
+        // Remove obsolete halls: Exam Hall-3..5, Lab Hall-1..2, Seminar Hall, Conference Hall
+        const removedHalls = new Set([
+            'Exam Hall-3', 'Exam Hall-4', 'Exam Hall-5',
+            'Lab Hall-1', 'Lab Hall-2', 'Seminar Hall', 'Conference Hall'
+        ]);
+
+        // Keep custom user-added halls that are not obsolete default halls
+        const customHalls = oldHalls.filter(h =>
+            !removedHalls.has(h.hall_no) &&
+            !defaults.some(d => d.hall_no.toLowerCase().trim() === h.hall_no.toLowerCase().trim())
+        );
+
+        return [...defaults, ...customHalls];
     }
 };
 
