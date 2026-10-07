@@ -93,8 +93,21 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            .no-print, .erp-sidebar, .erp-credit-footer, #alertArea, .filter-card, #plansTableCard, #masterView, .modal, .modal-backdrop {
+            .no-print, .erp-sidebar, .erp-credit-footer, #alertArea, .filter-card, #plansTableCard, .modal, .modal-backdrop {
                 display: none !important;
+            }
+            html.master-mode, html.master-mode body, html.master-mode .main-wrap {
+                width: auto !important;
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+            }
+            html.master-mode table {
+                page-break-inside: auto !important;
+                break-inside: auto !important;
+            }
+            html.master-mode .table-responsive {
+                overflow: visible !important;
             }
             .main-wrap {
                 padding: 0 !important;
@@ -365,6 +378,8 @@ function switchMode(mode) {
     document.getElementById('tabMaster').classList.toggle('active', mode === 'master');
     document.getElementById('plansView').style.display = mode === 'plans' ? '' : 'none';
     document.getElementById('masterView').style.display = mode === 'master' ? '' : 'none';
+    document.documentElement.classList.toggle('master-mode', mode === 'master');
+    document.body.classList.toggle('master-mode', mode === 'master');
 }
 
 let renderedPlans = [];
@@ -728,7 +743,22 @@ function saveLayoutAsPDF(hallName) {
         margin:       0,
         filename:     `Proforma_I_${cleanName}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false, scrollY: 0 },
+        html2canvas:  {
+            scale: 2, useCORS: true, logging: false, scrollY: 0,
+            onclone: function (doc) {
+                const el = doc.getElementById('printableProforma');
+                if (el) {
+                    el.style.maxWidth = 'none';
+                    el.style.margin = '0';
+                    el.style.width = '297mm';
+                    el.style.height = '208mm';
+                    el.style.maxHeight = '208mm';
+                    el.style.overflow = 'hidden';
+                    el.style.boxShadow = 'none';
+                }
+            }
+        },
+        pagebreak: { mode: ['avoid-all'] },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
@@ -747,10 +777,11 @@ function saveMasterAsPDF() {
     noPrintElems.forEach(el => el.style.display = 'none');
 
     const opt = {
-        margin:       [8, 8, 8, 8],
+        margin:       [10, 10, 10, 10],
         filename:     `Master_Seating_Report_${todayStr()}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        html2canvas:  { scale: 2, useCORS: true, logging: false, windowWidth: 1200 },
+        pagebreak:    { mode: ['css', 'legacy'] },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }
     };
 
