@@ -291,18 +291,10 @@ body { background: var(--dash-bg) !important; }
             <select id="filterYear" class="dash-filter-ctrl" onchange="applyDashboardFilters()">
                 <option value="">All Years</option>
                 <optgroup label="Year of Study">
-                    <option value="1">1st Year (I Year)</option>
-                    <option value="2">2nd Year (II Year)</option>
-                    <option value="3">3rd Year (III Year)</option>
-                    <option value="4">4th Year (IV Year)</option>
-                </optgroup>
-                <optgroup label="Admission Batch">
-                    <option value="2025">Batch 2025</option>
-                    <option value="2024">Batch 2024</option>
-                    <option value="2023">Batch 2023</option>
-                    <option value="2022">Batch 2022</option>
-                    <option value="2021">Batch 2021</option>
-                    <option value="2020">Batch 2020</option>
+                    <option value="1">I Year (1st)</option>
+                    <option value="2">II Year (2nd)</option>
+                    <option value="3">III Year (3rd)</option>
+                    <option value="4">IV Year (4th)</option>
                 </optgroup>
             </select>
         </div>
@@ -330,6 +322,16 @@ body { background: var(--dash-bg) !important; }
                 <option value="">All Types</option>
                 <option value="University">University (Semester)</option>
                 <option value="Internal">Internal</option>
+            </select>
+        </div>
+        <div class="dash-filter-group">
+            <label class="dash-filter-label" for="filterSession">
+                <i class="fa-solid fa-clock" style="color:var(--blue-500);"></i> Session
+            </label>
+            <select id="filterSession" class="dash-filter-ctrl" onchange="applyDashboardFilters()">
+                <option value="">All</option>
+                <option value="FN">FN</option>
+                <option value="AN">AN</option>
             </select>
         </div>
         <div class="dash-filter-group" style="align-self:end;">
@@ -484,9 +486,14 @@ body { background: var(--dash-bg) !important; }
             console.error('Error reading departments:', e);
         }
 
-        const sortedDepts = [...deptsSet].sort();
+        const UG_DEPTS = ['AI&DS', 'CSE', 'EEE', 'ECE', 'MECH', 'CIVIL'];
+        const PG_DEPTS = ['M.E. Computer Engineering', 'M.E. Power System and Engineering', 'M.E. Applied Electronic Engineering', 'MBA'];
+        const renderOpts = list => list
+            .filter(d => deptsSet.size === 0 || deptsSet.has(d))
+            .map(d => `<option value="${escapeHtml(d)}" ${d === currentVal ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('');
         select.innerHTML = '<option value="">All Departments</option>' +
-            sortedDepts.map(d => `<option value="${escapeHtml(d)}" ${d === currentVal ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('');
+            `<optgroup label="UG">${renderOpts(UG_DEPTS)}</optgroup>` +
+            `<optgroup label="PG">${renderOpts(PG_DEPTS)}</optgroup>`;
     }
 
     // Populate hall options dynamically
@@ -494,9 +501,13 @@ body { background: var(--dash-bg) !important; }
         const select = document.getElementById('filterHall');
         if (!select) return;
         const currentVal = select.value;
-        const hallNames = Halls.getNames();
+        const grouped = Halls.getGrouped();
         select.innerHTML = '<option value="">All Halls</option>' +
-            hallNames.map(h => `<option value="${escapeHtml(h)}" ${h === currentVal ? 'selected' : ''}>${escapeHtml(h)}</option>`).join('');
+            Object.keys(grouped).map(cat =>
+                `<optgroup label="${escapeHtml(cat)}">` +
+                grouped[cat].map(h => `<option value="${escapeHtml(h.hall_no)}" ${h.hall_no === currentVal ? 'selected' : ''}>${escapeHtml(h.hall_no)}</option>`).join('') +
+                `</optgroup>`
+            ).join('');
     }
 
     // Match student / allocation registration number with selected Year
@@ -565,6 +576,7 @@ body { background: var(--dash-bg) !important; }
         document.getElementById('filterDate').value = '';
         document.getElementById('filterHall').value = '';
         document.getElementById('filterExamType').value = '';
+        document.getElementById('filterSession').value = '';
         studentPage = 1;
         applyDashboardFilters();
     };
@@ -575,6 +587,7 @@ body { background: var(--dash-bg) !important; }
         if (filterName === 'date') document.getElementById('filterDate').value = '';
         if (filterName === 'hall') document.getElementById('filterHall').value = '';
         if (filterName === 'examType') document.getElementById('filterExamType').value = '';
+        if (filterName === 'session') document.getElementById('filterSession').value = '';
         studentPage = 1;
         applyDashboardFilters();
     };
@@ -592,6 +605,7 @@ body { background: var(--dash-bg) !important; }
         const date = document.getElementById('filterDate').value.trim();
         const hall = document.getElementById('filterHall').value.trim();
         const examType = document.getElementById('filterExamType').value.trim();
+        const session = document.getElementById('filterSession').value.trim();
 
         // 1. Render Active Filter Pills
         const pillsContainer = document.getElementById('activeFilterPills');
@@ -605,7 +619,6 @@ body { background: var(--dash-bg) !important; }
             else if (year === '2') yrLabel = '2nd Year';
             else if (year === '3') yrLabel = '3rd Year';
             else if (year === '4') yrLabel = '4th Year';
-            else yrLabel = `Batch ${year}`;
             pills.push(`<span class="dash-pill"><i class="fa-solid fa-graduation-cap"></i> Year: ${escapeHtml(yrLabel)} <span class="dash-pill-remove" onclick="removeFilter('year')">&times;</span></span>`);
         }
         if (date) {
@@ -616,6 +629,9 @@ body { background: var(--dash-bg) !important; }
         }
         if (examType) {
             pills.push(`<span class="dash-pill"><i class="fa-solid fa-file-signature"></i> Type: ${escapeHtml(examType)} <span class="dash-pill-remove" onclick="removeFilter('examType')">&times;</span></span>`);
+        }
+        if (session) {
+            pills.push(`<span class="dash-pill"><i class="fa-solid fa-clock"></i> Session: ${escapeHtml(session)} <span class="dash-pill-remove" onclick="removeFilter('session')">&times;</span></span>`);
         }
 
         if (pills.length === 0) {
@@ -659,6 +675,10 @@ body { background: var(--dash-bg) !important; }
                 const aType = a.exam_type || 'University';
                 if (aType !== examType) return false;
             }
+            if (session) {
+                const aSess = (a.session || 'FN').trim().toUpperCase();
+                if (aSess !== session.toUpperCase()) return false;
+            }
             return true;
         });
 
@@ -679,7 +699,7 @@ body { background: var(--dash-bg) !important; }
         filteredAllocations.forEach(a => {
             if (a.hall_no) matchedHalls.add(a.hall_no);
         });
-        const anyFilter = dept || year || date || hall || examType;
+        const anyFilter = dept || year || date || hall || examType || session;
         const totalHalls = anyFilter ? matchedHalls.size : Halls.getNames().length;
 
         const allocatedStudents = filteredAllocations.filter(a => a.reg_no).length;
