@@ -164,7 +164,6 @@ B.Tech Artificial Intelligence & Data Science (2023 to 2027 batch):
 - **A. Sherwin**
 
 **Under the Guidance of:**
-- **Mrs. N. Nancy Chitra Thilaga**, HOD of AI&DS
 - **Mrs. S. Janani**, AP/AI&DS
 
 Grace College of Engineering

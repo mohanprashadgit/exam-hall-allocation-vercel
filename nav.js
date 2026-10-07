@@ -227,8 +227,6 @@ function renderMenu(activePage) {
       <div class="cred-segment">
         <span class="cred-tag cred-tag-guide"><i class="fa-solid fa-chalkboard-user"></i> Under Guidance of:</span>
         <span class="cred-guides">
-          <span class="cred-guide">Mrs. N. Nancy Chitra Thilaga <span class="cred-role">(HOD of AI&amp;DS)</span></span>
-          <span class="cred-amp">&amp;</span>
           <span class="cred-guide">Mrs. S. Janani <span class="cred-role">(AP / AI&amp;DS)</span></span>
         </span>
       </div>

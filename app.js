@@ -28,7 +28,7 @@ const DB = {
 const Halls = {
     KEY: 'erp_halls',
     VERSION_KEY: 'erp_halls_version',
-    CURRENT_VERSION: 'v2_venue_structure_2026',
+    CURRENT_VERSION: 'v3_venue_structure_2026',
 
     getAll() {
         const curVer = localStorage.getItem(this.VERSION_KEY);
@@ -112,6 +112,7 @@ const Halls = {
 
             // 🏫 CSE Classrooms
             { id: 8, hall_no: 'CSE 2nd Year Class', category: 'CSE Classrooms', icon: '<i class="fa-solid fa-laptop-code"></i>', badge_label: 'CSE', badge_bg: '#ede9fe', badge_color: '#6d28d9' },
+            { id: 13, hall_no: 'CSE 3rd Year Class', category: 'CSE Classrooms', icon: '<i class="fa-solid fa-laptop-code"></i>', badge_label: 'CSE', badge_bg: '#ede9fe', badge_color: '#6d28d9' },
             { id: 9, hall_no: 'CSE 4th Year Class', category: 'CSE Classrooms', icon: '<i class="fa-solid fa-laptop-code"></i>', badge_label: 'CSE', badge_bg: '#ede9fe', badge_color: '#6d28d9' },
 
             // 🤖 AI & DS Classrooms
