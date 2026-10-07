@@ -77,6 +77,14 @@ body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: #1f2
                         <option value="AN">AN (Afternoon)</option>
                     </select>
                 </div>
+                <div class="col-md-2">
+                    <label class="filter-label">Month of Exam</label>
+                    <select id="filterMonth" class="filter-select w-100" onchange="renderReport()">
+                        <option value="">All Months</option>
+                        <option value="April/May">April/May</option>
+                        <option value="Nov/Dec">Nov/Dec</option>
+                    </select>
+                </div>
                 <div class="col-md-3">
                     <label class="filter-label">Hall Name</label>
                     <select id="filterHall" class="filter-select w-100" onchange="renderReport()">
@@ -119,6 +127,7 @@ function renderReport() {
     const filterType = document.getElementById('filterType').value;
     const filterSession = document.getElementById('filterSession').value;
     const filterHall = document.getElementById('filterHall').value;
+    const filterMonth = document.getElementById('filterMonth').value;
 
     let allocs = SeatAllocations.getAll().filter(a => a.reg_no);
 
@@ -126,6 +135,7 @@ function renderReport() {
     if (filterType) allocs = allocs.filter(a => a.exam_type === filterType);
     if (filterSession) allocs = allocs.filter(a => a.session === filterSession);
     if (filterHall) allocs = allocs.filter(a => a.hall_no === filterHall);
+    if (filterMonth) allocs = allocs.filter(a => (a.exam_month || '') === filterMonth);
 
     // Build pivot
     const pivot = {};
@@ -157,7 +167,9 @@ function renderReport() {
 
     const now = new Date();
     const months = ['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
-    let monthYear = filterDate ? (() => { const d = new Date(filterDate + 'T00:00:00'); return months[d.getMonth()] + '/' + d.getFullYear(); })() : months[now.getMonth()] + '/' + now.getFullYear();
+    let monthYear = filterMonth
+        ? filterMonth.toUpperCase() + '/' + (filterDate ? new Date(filterDate + 'T00:00:00').getFullYear() : now.getFullYear())
+        : (filterDate ? (() => { const d = new Date(filterDate + 'T00:00:00'); return months[d.getMonth()] + '/' + d.getFullYear(); })() : months[now.getMonth()] + '/' + now.getFullYear());
     const displayDate = filterDate ? (() => { const d = new Date(filterDate + 'T00:00:00'); return String(d.getDate()).padStart(2,'0') + '.' + String(d.getMonth()+1).padStart(2,'0') + '.' + d.getFullYear(); })() : 'ALL';
 
     let html = `
@@ -169,7 +181,7 @@ function renderReport() {
         </div>
         <div class="report-meta">
             <div>DATE: ${displayDate}</div>
-            <div>TYPE: ${escapeHtml(filterType || 'ALL')} | SESSION: ${escapeHtml(filterSession || 'ALL')}</div>
+            <div>TYPE: ${escapeHtml(filterType || 'ALL')} | SESSION: ${escapeHtml(filterSession || 'ALL')} | MONTH: ${escapeHtml(filterMonth || 'ALL')}</div>
         </div>
         <table class="matrix-table">
             <thead><tr>

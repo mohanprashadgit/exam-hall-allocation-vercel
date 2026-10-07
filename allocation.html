@@ -992,6 +992,16 @@
                     </select>
                 </div>
 
+                <!-- Month of Exam (University) -->
+                <div class="field-wrap" id="monthWrap">
+                    <label for="exam_month">Month of Exam</label>
+                    <select id="exam_month">
+                        <option value="">-- Select --</option>
+                        <option value="April/May">April/May</option>
+                        <option value="Nov/Dec">Nov/Dec</option>
+                    </select>
+                </div>
+
                 <!-- University Time Display (auto-calculated, read-only) -->
                 <div class="field-wrap" id="univTimeWrap">
                     <label>Exam Time</label>
@@ -1217,7 +1227,8 @@
             const origPlan = editMode ? {
                 hall_no: params.get('edit_hall'), exam_date: params.get('edit_date'),
                 exam_type: params.get('edit_type') || 'University', session: params.get('edit_session') || '',
-                from_time: params.get('edit_from') || '', to_time: params.get('edit_to') || ''
+                from_time: params.get('edit_from') || '', to_time: params.get('edit_to') || '',
+                exam_month: params.get('edit_month') || ''
             } : null;
 
             if (editMode) {
@@ -1241,6 +1252,7 @@
             function showUniversityFields() {
                 document.getElementById('examDateWrap').style.display = '';
                 document.getElementById('sessionWrap').style.display = '';
+                document.getElementById('monthWrap').style.display = '';
                 document.getElementById('univTimeWrap').style.display = '';
                 document.getElementById('startDateWrap').style.display = 'none';
                 document.getElementById('endDateWrap').style.display = 'none';
@@ -1250,6 +1262,7 @@
             function showInternalFields() {
                 document.getElementById('examDateWrap').style.display = 'none';
                 document.getElementById('sessionWrap').style.display = 'none';
+                document.getElementById('monthWrap').style.display = 'none';
                 document.getElementById('univTimeWrap').style.display = 'none';
                 document.getElementById('startDateWrap').style.display = '';
                 document.getElementById('endDateWrap').style.display = '';
@@ -1389,11 +1402,12 @@
                 } else {
                     document.getElementById('exam_date').value = origPlan.exam_date;
                     document.getElementById('session').value = origPlan.session || 'FN';
+                    if (origPlan.exam_month) document.getElementById('exam_month').value = origPlan.exam_month;
                     showUniversityFields();
                 }
 
                 // Load seats from localStorage
-                const seats = SeatAllocations.getSeats(origPlan.hall_no, origPlan.exam_date, origPlan.exam_type, origPlan.session, origPlan.from_time, origPlan.to_time);
+                const seats = SeatAllocations.getSeats(origPlan.hall_no, origPlan.exam_date, origPlan.exam_type, origPlan.session, origPlan.from_time, origPlan.to_time, '', '', origPlan.exam_month || '');
                 const leftRegs = [], rightRegs = [];
                 let leftSub = '', rightSub = '';
                 seats.forEach(s => {
@@ -1877,7 +1891,7 @@
                 const examType = document.querySelector('input[name="exam_type"]:checked').value;
                 const isUniv = examType === 'University';
 
-                let examDate, session, fromTime, toTime, startDate = '', endDate = '';
+                let examDate, session, fromTime, toTime, startDate = '', endDate = '', examMonth = '';
 
                 if (isUniv) {
                     examDate = document.getElementById('exam_date').value.trim();
@@ -1888,6 +1902,11 @@
 
                     if (!hallNo || !examDate || !session) {
                         showAlert('Please select Hall Name, Exam Date, and Session before saving.', 'danger');
+                        return;
+                    }
+                    examMonth = document.getElementById('exam_month') ? document.getElementById('exam_month').value : '';
+                    if (!examMonth) {
+                        showAlert('Please select the Month of Exam before saving.', 'danger');
                         return;
                     }
                 } else {
@@ -1942,6 +1961,7 @@
                         to_time: toTime,
                         start_date: startDate,
                         end_date: endDate,
+                        exam_month: examMonth,
                         seat_label: label,
                         section: seat.section,
                         reg_no: seat.reg_no,

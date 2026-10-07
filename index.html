@@ -334,6 +334,16 @@ body { background: var(--dash-bg) !important; }
                 <option value="AN">AN</option>
             </select>
         </div>
+        <div class="dash-filter-group">
+            <label class="dash-filter-label" for="filterMonth">
+                <i class="fa-solid fa-calendar-days" style="color:var(--orange-500);"></i> Month of Exam
+            </label>
+            <select id="filterMonth" class="dash-filter-ctrl" onchange="applyDashboardFilters()">
+                <option value="">All</option>
+                <option value="April/May">April/May</option>
+                <option value="Nov/Dec">Nov/Dec</option>
+            </select>
+        </div>
         <div class="dash-filter-group" style="align-self:end;">
             <button type="button" class="dash-filter-btn-reset" id="btnResetFilters" onclick="resetDashboardFilters()">
                 <i class="fa-solid fa-rotate-left"></i> Reset All Filters
@@ -577,6 +587,7 @@ body { background: var(--dash-bg) !important; }
         document.getElementById('filterHall').value = '';
         document.getElementById('filterExamType').value = '';
         document.getElementById('filterSession').value = '';
+        document.getElementById('filterMonth').value = '';
         studentPage = 1;
         applyDashboardFilters();
     };
@@ -588,6 +599,7 @@ body { background: var(--dash-bg) !important; }
         if (filterName === 'hall') document.getElementById('filterHall').value = '';
         if (filterName === 'examType') document.getElementById('filterExamType').value = '';
         if (filterName === 'session') document.getElementById('filterSession').value = '';
+        if (filterName === 'month') document.getElementById('filterMonth').value = '';
         studentPage = 1;
         applyDashboardFilters();
     };
@@ -606,6 +618,7 @@ body { background: var(--dash-bg) !important; }
         const hall = document.getElementById('filterHall').value.trim();
         const examType = document.getElementById('filterExamType').value.trim();
         const session = document.getElementById('filterSession').value.trim();
+        const month = document.getElementById('filterMonth').value.trim();
 
         // 1. Render Active Filter Pills
         const pillsContainer = document.getElementById('activeFilterPills');
@@ -632,6 +645,9 @@ body { background: var(--dash-bg) !important; }
         }
         if (session) {
             pills.push(`<span class="dash-pill"><i class="fa-solid fa-clock"></i> Session: ${escapeHtml(session)} <span class="dash-pill-remove" onclick="removeFilter('session')">&times;</span></span>`);
+        }
+        if (month) {
+            pills.push(`<span class="dash-pill"><i class="fa-solid fa-calendar-days"></i> Month: ${escapeHtml(month)} <span class="dash-pill-remove" onclick="removeFilter('month')">&times;</span></span>`);
         }
 
         if (pills.length === 0) {
@@ -679,6 +695,9 @@ body { background: var(--dash-bg) !important; }
                 const aSess = (a.session || 'FN').trim().toUpperCase();
                 if (aSess !== session.toUpperCase()) return false;
             }
+            if (month) {
+                if ((a.exam_month || '') !== month) return false;
+            }
             return true;
         });
 
@@ -699,7 +718,7 @@ body { background: var(--dash-bg) !important; }
         filteredAllocations.forEach(a => {
             if (a.hall_no) matchedHalls.add(a.hall_no);
         });
-        const anyFilter = dept || year || date || hall || examType || session;
+        const anyFilter = dept || year || date || hall || examType || session || month;
         const totalHalls = anyFilter ? matchedHalls.size : Halls.getNames().length;
 
         const allocatedStudents = filteredAllocations.filter(a => a.reg_no).length;
@@ -736,7 +755,7 @@ body { background: var(--dash-bg) !important; }
         filteredAllocations.forEach(a => {
             const isUniv = (a.exam_type || 'University') === 'University';
             const key = isUniv
-                ? `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.session}`
+                ? `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.session}|${a.exam_month || ''}`
                 : `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.start_date || ''}|${a.end_date || ''}`;
 
             if (!planMap[key]) {
@@ -749,6 +768,7 @@ body { background: var(--dash-bg) !important; }
                     to_time: a.to_time || '',
                     start_date: a.start_date || '',
                     end_date: a.end_date || '',
+                    exam_month: a.exam_month || '',
                     depts: new Set(),
                     subjects: new Set(),
                     count: 0
@@ -788,11 +808,12 @@ body { background: var(--dash-bg) !important; }
                 const sessDisplay = p.exam_type === 'Internal'
                     ? (p.from_time && p.to_time ? `${p.from_time} – ${p.to_time}` : (p.session || 'Internal'))
                     : (p.session === 'AN' ? 'AN (02:00 PM – 05:00 PM)' : 'FN (10:00 AM – 01:00 PM)');
+                const sessDisplayFull = p.exam_month && p.exam_type !== 'Internal' ? `${sessDisplay} · ${p.exam_month}` : sessDisplay;
                 const typeBadge = p.exam_type === 'Internal'
                     ? `<span class="badge bg-warning text-dark font-weight-bold">Internal</span>`
                     : `<span class="badge bg-primary">University</span>`;
                 
-                const editUrl = `allocation.html?edit_hall=${encodeURIComponent(p.hall_no)}&edit_date=${encodeURIComponent(p.exam_date)}&edit_type=${encodeURIComponent(p.exam_type)}&edit_session=${encodeURIComponent(p.session)}&edit_from=${encodeURIComponent(p.from_time)}&edit_to=${encodeURIComponent(p.to_time)}`;
+                const editUrl = `allocation.html?edit_hall=${encodeURIComponent(p.hall_no)}&edit_date=${encodeURIComponent(p.exam_date)}&edit_type=${encodeURIComponent(p.exam_type)}&edit_session=${encodeURIComponent(p.session)}&edit_from=${encodeURIComponent(p.from_time)}&edit_to=${encodeURIComponent(p.to_time)}&edit_month=${encodeURIComponent(p.exam_month || '')}`;
 
                 return `<tr>
                     <td>
@@ -802,7 +823,7 @@ body { background: var(--dash-bg) !important; }
                         </span>
                     </td>
                     <td class="fw-semibold text-secondary">${formatDate(p.exam_date)}</td>
-                    <td><span class="badge" style="background:var(--gray-100);color:var(--gray-700);font-weight:600;">${escapeHtml(sessDisplay)}</span></td>
+                    <td><span class="badge" style="background:var(--gray-100);color:var(--gray-700);font-weight:600;">${escapeHtml(sessDisplayFull)}</span></td>
                     <td>${typeBadge}</td>
                     <td>${deptsList}</td>
                     <td style="text-align:center;">

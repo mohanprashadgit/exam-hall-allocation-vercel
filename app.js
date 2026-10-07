@@ -310,18 +310,20 @@ const SeatAllocations = {
         if (filters.exam_type) allocs = allocs.filter(a => a.exam_type === filters.exam_type);
         if (filters.session) allocs = allocs.filter(a => a.session === filters.session);
         if (filters.hall_no) allocs = allocs.filter(a => a.hall_no === filters.hall_no);
+        if (filters.exam_month) allocs = allocs.filter(a => (a.exam_month || '') === filters.exam_month);
 
         const planMap = {};
         allocs.forEach(a => {
             const isUniv = (a.exam_type || 'University') === 'University';
             const key = isUniv
-                ? `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.session}`
+                ? `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.session}|${a.exam_month || ''}`
                 : `${a.hall_no}|${a.exam_date}|${a.exam_type}|${a.start_date||''}|${a.end_date||''}`;
             if (!planMap[key]) {
                 planMap[key] = {
                     hall_no: a.hall_no, exam_date: a.exam_date, exam_type: a.exam_type,
                     session: a.session, from_time: a.from_time || '', to_time: a.to_time || '',
                     start_date: a.start_date || '', end_date: a.end_date || '',
+                    exam_month: a.exam_month || '',
                     left_count: 0, right_count: 0
                 };
             }
@@ -338,14 +340,16 @@ const SeatAllocations = {
     /**
      * Get seat details for a specific plan
      */
-    getSeats(hall_no, exam_date, exam_type, session, from_time, to_time, start_date, end_date) {
+    getSeats(hall_no, exam_date, exam_type, session, from_time, to_time, start_date, end_date, exam_month) {
         const targetType = exam_type || 'University';
         return this.getAll().filter(a => {
             if (a.hall_no !== hall_no || a.exam_date !== exam_date) return false;
             const aType = a.exam_type || 'University';
             if (aType !== targetType) return false;
             if (targetType === 'University') {
-                return (a.session || '') === (session || '');
+                if ((a.session || '') !== (session || '')) return false;
+                if (exam_month && (a.exam_month || '') !== exam_month) return false;
+                return true;
             } else {
                 if (session && a.session && a.session !== session) return false;
                 if (start_date && a.start_date && a.start_date !== start_date) return false;
@@ -516,7 +520,9 @@ const SeatAllocations = {
         const pType = plan.exam_type || 'University';
         if (aType !== pType) return false;
         if (pType === 'University') {
-            return (a.session || '') === (plan.session || '');
+            if ((a.session || '') !== (plan.session || '')) return false;
+            if (plan.exam_month && a.exam_month && plan.exam_month !== a.exam_month) return false;
+            return true;
         } else {
             if (plan.session && a.session && a.session !== plan.session) return false;
             if (plan.start_date && a.start_date && a.start_date !== plan.start_date) return false;
