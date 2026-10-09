@@ -231,13 +231,14 @@ function renderStudents() {
     } else {
         tbody.innerHTML = pageStudents.map((s, idx) => {
             const fullName = ((s.stu_fname || '') + ' ' + (s.stu_lname || '')).trim();
-            const dept = getStudentDept(s.stu_regno) || s.stu_dept || '';
+            const identifier = (s.stu_regno && s.stu_regno.trim() !== '') ? s.stu_regno.trim() : (s.stu_id || '').trim();
+            const dept = getStudentDept(identifier) || s.stu_dept || '';
             const sl = offset + idx + 1;
             const isDisc = (s.stu_status || '').toLowerCase().includes('discontinu');
             return `<tr>
                 <td style="text-align:center;font-weight:bold;color:var(--gray-500);">${sl}</td>
                 <td style="font-weight:600;">${escapeHtml(fullName)}</td>
-                <td class="cell-regno">${escapeHtml(s.stu_regno || '')}</td>
+                <td class="cell-regno">${escapeHtml(identifier)}</td>
                 <td><span class="dept-pill">${escapeHtml(dept)}</span></td>
                 <td style="text-align:center;">
                     ${isDisc 
@@ -245,7 +246,7 @@ function renderStudents() {
                         : '<span class="status-pill status-active"><i class="fa-solid fa-check"></i> Active</span>'}
                 </td>
                 <td style="text-align:center;">
-                    <button type="button" class="btn-status-toggle ${isDisc ? 'btn-make-active' : 'btn-make-disc'}" onclick="toggleStudentStatus('${escapeHtml(s.stu_regno)}')">
+                    <button type="button" class="btn-status-toggle ${isDisc ? 'btn-make-active' : 'btn-make-disc'}" onclick="toggleStudentStatus('${escapeHtml(identifier)}')">
                         ${isDisc ? '<i class="fa-solid fa-user-check"></i> Activate' : '<i class="fa-solid fa-user-slash"></i> Discontinue'}
                     </button>
                 </td>

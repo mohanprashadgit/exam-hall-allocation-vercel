@@ -167,15 +167,21 @@ const Students = {
         if (!reg_no) return null;
         const all = this.getAll();
         const rStr = String(reg_no).trim();
-        let found = all.find(s => s.stu_regno === rStr);
+        let found = all.find(s => (s.stu_regno || s.stu_id) === rStr);
         if (found) return found;
         if (rStr.length <= 3 && /^\d+$/.test(rStr)) {
             const padded = rStr.padStart(3, '0');
-            found = all.find(s => s.stu_regno && s.stu_regno.endsWith(padded));
+            found = all.find(s => {
+                const r = s.stu_regno || s.stu_id;
+                return r && r.endsWith(padded);
+            });
             if (found) return found;
         }
         if (rStr.length > 3) {
-            found = all.find(s => s.stu_regno && s.stu_regno.endsWith(rStr));
+            found = all.find(s => {
+                const r = s.stu_regno || s.stu_id;
+                return r && r.endsWith(rStr);
+            });
             if (found) return found;
         }
         return null;
@@ -186,9 +192,12 @@ const Students = {
         const map = {};
         reg_nos.forEach(r => {
             if (!r) return;
-            let s = all.find(st => st.stu_regno === r);
+            let s = all.find(st => (st.stu_regno || st.stu_id) === r);
             if (!s && r.length < 12) {
-                s = all.find(st => st.stu_regno && st.stu_regno.endsWith(r));
+                s = all.find(st => {
+                    const idOrReg = st.stu_regno || st.stu_id;
+                    return idOrReg && idOrReg.endsWith(r);
+                });
             }
             if (s) {
                 map[r] = s;
@@ -207,15 +216,16 @@ const Students = {
             });
         }
         if (filters.regno) {
-            students = students.filter(s => (s.stu_regno || '').includes(filters.regno));
+            students = students.filter(s => (s.stu_regno || s.stu_id || '').includes(filters.regno));
         }
         if (filters.dept) {
             const code = DEPT_TO_CODE[filters.dept];
             const deptUpper = filters.dept.toUpperCase();
             students = students.filter(s => {
-                const d = (s.stu_dept || getStudentDept(s.stu_regno) || '').toUpperCase();
+                const r = s.stu_regno || s.stu_id || '';
+                const d = (s.stu_dept || getStudentDept(r) || '').toUpperCase();
                 if (d === deptUpper || d.startsWith(deptUpper)) return true;
-                if (code && (s.stu_regno || '').substring(6, 9) === code) return true;
+                if (code && r.substring(6, 9) === code) return true;
                 return false;
             });
         }
@@ -228,7 +238,11 @@ const Students = {
                 return st === filterSt;
             });
         }
-        return students.sort((a, b) => (a.stu_regno || '').localeCompare(b.stu_regno || ''));
+        return students.sort((a, b) => {
+            const regA = a.stu_regno || a.stu_id || '';
+            const regB = b.stu_regno || b.stu_id || '';
+            return regA.localeCompare(regB);
+        });
     },
 
     add(reg_no, fname, lname, dept, status = 'Active') {
@@ -1646,14 +1660,28 @@ function getComprehensiveDefaultStudents() {
         ['stu_seed_0928', '950325114017', 'VINAYAGA', 'SHANMUGAVEL S', 'MECH', 'Active']
     ];
 
-    return rawData.map(([id, reg, fn, ln, dept, status]) => ({
-        stu_id: id,
-        stu_regno: reg,
-        stu_fname: fn,
-        stu_lname: ln,
-        stu_dept: dept,
-        stu_status: status || 'Active'
-    }));
+    return rawData.map(([id, reg, fn, ln, dept, status]) => {
+        const hasReg = reg && String(reg).trim() !== '';
+        const hasId  = id && String(id).trim() !== '';
+
+        const item = {
+            stu_fname: fn,
+            stu_lname: ln,
+            stu_dept: dept,
+            stu_status: status || 'Active'
+        };
+
+        if (hasReg) {
+            // First priority to stu_regno; if both are present, fetch only stu_regno
+            item.stu_regno = String(reg).trim();
+        } else if (hasId) {
+            // If stu_regno is empty, fallback to stu_id
+            item.stu_id    = String(id).trim();
+            item.stu_regno = String(id).trim();
+        }
+
+        return item;
+    });
 }
 
 function seedSampleData(force = false) {

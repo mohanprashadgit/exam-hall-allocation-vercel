@@ -19,11 +19,15 @@ if ($conn->connect_error) {
 $conn->set_charset("utf8mb4");
 
 // Fetch active students only — Strictly exclude Discontinued & Completed
+// Priority rule: stu_regno has first priority. If empty, fallback to stu_id. If both are present, fetch only stu_regno.
 $sql = "SELECT stu_id, stu_regno, stu_fname, stu_lname, stu_dept, stu_status 
         FROM erp_student 
         WHERE LOWER(stu_status) NOT LIKE '%discontinu%' 
           AND LOWER(stu_status) NOT LIKE '%complete%'
-        ORDER BY stu_regno ASC";
+        ORDER BY CASE 
+            WHEN stu_regno IS NOT NULL AND TRIM(stu_regno) != '' THEN TRIM(stu_regno) 
+            ELSE TRIM(stu_id) 
+        END ASC";
 
 $result = $conn->query($sql);
 if (!$result) {
@@ -32,7 +36,10 @@ if (!$result) {
                     FROM students 
                     WHERE LOWER(stu_status) NOT LIKE '%discontinu%' 
                       AND LOWER(stu_status) NOT LIKE '%complete%'
-                    ORDER BY stu_regno ASC";
+                    ORDER BY CASE 
+                        WHEN stu_regno IS NOT NULL AND TRIM(stu_regno) != '' THEN TRIM(stu_regno) 
+                        ELSE TRIM(stu_id) 
+                    END ASC";
     $result = $conn->query($sqlFallback);
 }
 
@@ -45,14 +52,26 @@ if (!$result) {
 
 $students = [];
 while ($row = $result->fetch_assoc()) {
-    $students[] = [
-        "stu_id"     => $row["stu_id"],
-        "stu_regno"  => $row["stu_regno"],
+    $hasRegno = isset($row["stu_regno"]) && trim($row["stu_regno"]) !== '';
+    $hasId    = isset($row["stu_id"]) && trim($row["stu_id"]) !== '';
+
+    $student = [
         "stu_fname"  => $row["stu_fname"],
         "stu_lname"  => $row["stu_lname"],
         "stu_dept"   => $row["stu_dept"],
         "stu_status" => $row["stu_status"]
     ];
+
+    if ($hasRegno) {
+        // Priority 1: stu_regno is present (or both are present) -> fetch only stu_regno
+        $student["stu_regno"] = trim($row["stu_regno"]);
+    } elseif ($hasId) {
+        // stu_regno is empty -> fetch stu_id (and alias as stu_regno for application compatibility)
+        $student["stu_id"]    = trim($row["stu_id"]);
+        $student["stu_regno"] = trim($row["stu_id"]);
+    }
+
+    $students[] = $student;
 }
 
 $conn->close();
