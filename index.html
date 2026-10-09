@@ -419,7 +419,7 @@ body { background: var(--dash-bg) !important; }
                     <tr>
                         <th style="width:60px;text-align:center;">#</th>
                         <th>Student Name</th>
-                        <th>Register Number</th>
+                        <th>Register / Roll Number</th>
                         <th>Department</th>
                         <th>Year / Batch</th>
                         <th style="text-align:center;">Status</th>
@@ -520,11 +520,19 @@ body { background: var(--dash-bg) !important; }
             ).join('');
     }
 
-    // Match student / allocation registration number with selected Year
+    // Match student / allocation registration/roll number with selected Year
     function matchYear(regNo, yearVal) {
         if (!yearVal) return true;
-        if (!regNo || regNo.length < 6) return false;
-        const batchDigits = regNo.substring(4, 6); // e.g. "23"
+        if (!regNo) return false;
+        let r = String(regNo).trim();
+        if (r.length < 6 && typeof Students !== 'undefined' && Students.find) {
+            const found = Students.find(r);
+            if (found && (found.stu_regno || found.stu_id)) {
+                r = found.stu_regno || found.stu_id;
+            }
+        }
+        if (r.length < 6) return false;
+        const batchDigits = r.substring(4, 6); // e.g. "23"
         const fullBatchYear = '20' + batchDigits; // e.g. "2023"
         const yStr = String(yearVal).trim();
 
@@ -551,8 +559,16 @@ body { background: var(--dash-bg) !important; }
     }
 
     function getStudentYearLabel(regNo) {
-        if (!regNo || regNo.length < 6) return '-';
-        const b = regNo.substring(4, 6);
+        if (!regNo) return '-';
+        let r = String(regNo).trim();
+        if (r.length < 6 && typeof Students !== 'undefined' && Students.find) {
+            const found = Students.find(r);
+            if (found && (found.stu_regno || found.stu_id)) {
+                r = found.stu_regno || found.stu_id;
+            }
+        }
+        if (r.length < 6) return '-';
+        const b = r.substring(4, 6);
         if (b === '25' || b === '24') return `1st Year (${'20' + b})`;
         if (b === '23') return `2nd Year (${'20' + b})`;
         if (b === '22') return `3rd Year (${'20' + b})`;
@@ -661,23 +677,25 @@ body { background: var(--dash-bg) !important; }
         if (dept) {
             const deptUpper = dept.toUpperCase();
             filteredStudents = filteredStudents.filter(s => {
-                const d = (s.stu_dept || getStudentDept(s.stu_regno) || '').toUpperCase();
+                const idOrReg = s.stu_regno || s.stu_id || '';
+                const d = (s.stu_dept || getStudentDept(idOrReg) || '').toUpperCase();
                 return d === deptUpper;
             });
         }
         if (year) {
-            filteredStudents = filteredStudents.filter(s => matchYear(s.stu_regno, year));
+            filteredStudents = filteredStudents.filter(s => matchYear(s.stu_regno || s.stu_id, year));
         }
 
         // 3. Filter Allocations
         const allAllocations = SeatAllocations.getAll();
         let filteredAllocations = allAllocations.filter(a => {
+            const idOrReg = a.reg_no || a.stu_id || '';
             if (dept) {
-                const d = (a.department || getStudentDept(a.reg_no) || '').toUpperCase();
+                const d = (a.department || getStudentDept(idOrReg) || '').toUpperCase();
                 if (d !== dept.toUpperCase()) return false;
             }
             if (year) {
-                if (!matchYear(a.reg_no, year)) return false;
+                if (!matchYear(idOrReg, year)) return false;
             }
             if (date) {
                 const matchExact = a.exam_date === date;
@@ -865,14 +883,15 @@ body { background: var(--dash-bg) !important; }
 
             studentsTbody.innerHTML = pageItems.map((s, idx) => {
                 const fullName = getStudentFullName(s);
-                const stuDept = s.stu_dept || getStudentDept(s.stu_regno) || '-';
-                const stuYear = getStudentYearLabel(s.stu_regno);
+                const idOrReg = s.stu_regno || s.stu_id || '';
+                const stuDept = s.stu_dept || getStudentDept(idOrReg) || '-';
+                const stuYear = getStudentYearLabel(idOrReg);
                 const isDisc = (s.stu_status || '').toLowerCase().includes('discontinu');
 
                 return `<tr>
                     <td style="text-align:center;color:var(--gray-500);font-weight:600;">${startIndex + idx + 1}</td>
                     <td class="fw-semibold text-dark">${escapeHtml(fullName)}</td>
-                    <td><code style="font-weight:700;color:var(--purple-700);">${escapeHtml(s.stu_regno)}</code></td>
+                    <td><code style="font-weight:700;color:var(--purple-700);">${escapeHtml(idOrReg)}</code></td>
                     <td><span class="badge" style="background:var(--purple-100);color:var(--purple-700);font-weight:600;">${escapeHtml(stuDept)}</span></td>
                     <td><span class="text-secondary" style="font-size:0.8rem;">${escapeHtml(stuYear)}</span></td>
                     <td style="text-align:center;">

@@ -247,10 +247,11 @@ const Students = {
 
     add(reg_no, fname, lname, dept, status = 'Active') {
         const students = DB.get(this.KEY) || this._defaults();
-        if (students.some(s => s.stu_regno === reg_no)) return { ok: false, error: `Student ${reg_no} already exists!` };
+        const idOrReg = String(reg_no).trim();
+        if (students.some(s => (s.stu_regno || s.stu_id) === idOrReg)) return { ok: false, error: `Student ${idOrReg} already exists!` };
         students.push({
             stu_id: 'stu_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
-            stu_regno: reg_no, stu_fname: fname, stu_lname: lname, stu_dept: dept, stu_status: status || 'Active'
+            stu_regno: idOrReg, stu_fname: fname, stu_lname: lname, stu_dept: dept, stu_status: status || 'Active'
         });
         DB.set(this.KEY, students);
         return { ok: true };
@@ -258,7 +259,8 @@ const Students = {
 
     update(reg_no, fname, lname, dept, status) {
         const students = DB.get(this.KEY) || this._defaults();
-        const idx = students.findIndex(s => s.stu_regno === reg_no);
+        const idOrReg = String(reg_no).trim();
+        const idx = students.findIndex(s => (s.stu_regno || s.stu_id) === idOrReg);
         if (idx === -1) return { ok: false, error: 'Student not found.' };
         const prevStatus = students[idx].stu_status || 'Active';
         students[idx] = {
@@ -274,7 +276,8 @@ const Students = {
 
     setStatus(reg_no, status) {
         const students = DB.get(this.KEY) || this._defaults();
-        const idx = students.findIndex(s => s.stu_regno === reg_no);
+        const idOrReg = String(reg_no).trim();
+        const idx = students.findIndex(s => (s.stu_regno || s.stu_id) === idOrReg);
         if (idx === -1) return { ok: false, error: 'Student not found.' };
         students[idx].stu_status = status;
         DB.set(this.KEY, students);
@@ -283,7 +286,8 @@ const Students = {
 
     toggleStatus(reg_no) {
         const students = DB.get(this.KEY) || this._defaults();
-        const idx = students.findIndex(s => s.stu_regno === reg_no);
+        const idOrReg = String(reg_no).trim();
+        const idx = students.findIndex(s => (s.stu_regno || s.stu_id) === idOrReg);
         if (idx === -1) return { ok: false, error: 'Student not found.' };
         const curr = (students[idx].stu_status || 'Active').toLowerCase();
         const newStatus = curr.includes('discontinu') ? 'Active' : 'Discontinued';
@@ -559,14 +563,40 @@ const DEPT_TO_CODE = {
 const CODE_TO_DEPT = {};
 Object.entries(DEPT_TO_CODE).forEach(([k, v]) => CODE_TO_DEPT[v] = k);
 
+function getStudentIdentifier(stu) {
+    if (!stu) return '';
+    if (typeof stu === 'string') return stu.trim();
+    if (stu.stu_regno && String(stu.stu_regno).trim() !== '') return String(stu.stu_regno).trim();
+    if (stu.reg_no && String(stu.reg_no).trim() !== '') return String(stu.reg_no).trim();
+    if (stu.stu_id && String(stu.stu_id).trim() !== '') return String(stu.stu_id).trim();
+    return '';
+}
+
 function getStudentDept(regno) {
-    if (!regno || regno.length < 9) return '';
-    const code = regno.substring(6, 9);
-    return CODE_TO_DEPT[code] || '';
+    if (!regno) return '';
+    if (typeof regno === 'object') {
+        if (regno.stu_dept) return regno.stu_dept;
+        regno = getStudentIdentifier(regno);
+    }
+    const rStr = String(regno).trim();
+    if (rStr.length >= 9) {
+        const code = rStr.substring(6, 9);
+        if (CODE_TO_DEPT[code]) return CODE_TO_DEPT[code];
+    }
+    if (typeof Students !== 'undefined' && Students.find) {
+        const found = Students.find(rStr);
+        if (found && found.stu_dept) return found.stu_dept;
+    }
+    return '';
 }
 
 function getStudentFullName(stu) {
     if (!stu) return '';
+    if (typeof stu === 'string') {
+        const found = (typeof Students !== 'undefined' && Students.find) ? Students.find(stu) : null;
+        if (found) stu = found;
+        else return 'Student ' + stu;
+    }
     if (stu.full_name) return stu.full_name.trim();
     if (stu.name) return stu.name.trim();
     if (stu.stu_name) return stu.stu_name.trim();
@@ -574,7 +604,8 @@ function getStudentFullName(stu) {
     const ln = (stu.stu_lname || '').trim();
     const combined = (fn + ' ' + ln).trim();
     if (combined) return combined;
-    return 'Student ' + (stu.stu_regno || '').slice(-3);
+    const id = getStudentIdentifier(stu);
+    return 'Student ' + (id ? id.slice(-3) : '');
 }
 
 function escapeHtml(str) {
@@ -646,9 +677,26 @@ function expandRegRange(raw, limit = 999) {
                         results.push(String(n).padStart(len, '0'));
                     }
                 }
+            } else {
+                // Alphanumeric roll numbers or IDs with sequential suffix (e.g. CS01-CS10 or 23AD001-23AD020)
+                const m1 = startStr.match(/^([a-zA-Z_\-]+)?(\d+)$/);
+                const m2 = endStr.match(/^([a-zA-Z_\-]+)?(\d+)$/);
+                if (m1 && m2 && (m1[1] || '') === (m2[1] || '')) {
+                    const pfx = m1[1] || '';
+                    const num1 = parseInt(m1[2], 10);
+                    const num2 = parseInt(m2[2], 10);
+                    const padLen = m1[2].length;
+                    if (num1 <= num2) {
+                        for (let n = num1; n <= num2 && results.length < limit; n++) {
+                            results.push(pfx + String(n).padStart(padLen, '0'));
+                        }
+                    }
+                } else {
+                    results.push(part);
+                }
             }
-        } else if (/^\d+$/.test(part)) {
-            results.push(part);
+        } else if (part.trim()) {
+            results.push(part.trim());
         }
     }
     return [...new Set(results)];
@@ -656,7 +704,14 @@ function expandRegRange(raw, limit = 999) {
 
 function compressRegNumbers(regNos) {
     if (!regNos || regNos.length === 0) return '';
-    const sorted = [...new Set(regNos.map(r => r.trim()).filter(Boolean))].sort();
+    const sorted = [...new Set(regNos.map(r => r.trim()).filter(Boolean))].sort((a, b) => {
+        const numA = parseInt(a, 10);
+        const numB = parseInt(b, 10);
+        if (!isNaN(numA) && !isNaN(numB) && String(numA) === a && String(numB) === b) {
+            return numA - numB;
+        }
+        return a.localeCompare(b);
+    });
     if (sorted.length === 0) return '';
 
     const groups = [];
@@ -664,7 +719,9 @@ function compressRegNumbers(regNos) {
 
     for (let i = 1; i < sorted.length; i++) {
         const curr = sorted[i];
-        if (parseInt(curr) - parseInt(prev) === 1) {
+        const numCurr = parseInt(curr, 10);
+        const numPrev = parseInt(prev, 10);
+        if (!isNaN(numCurr) && !isNaN(numPrev) && numCurr - numPrev === 1 && curr.length === prev.length) {
             prev = curr;
         } else {
             groups.push(start === prev ? start : `${start}-${prev}`);
@@ -725,7 +782,7 @@ function getSeatSets(layoutId) {
 // DATABASE SEEDER (ALL 928 DATABASE_SEED.SQL RECORDS INCL. DISCONTINUED)
 // ═══════════════════════════════════════════════════════════════
 const DB_SEED_VERSION_KEY = 'erp_seed_version';
-const CURRENT_SEED_VERSION = 'v4_seed_928_with_discontinued';
+const CURRENT_SEED_VERSION = 'v6_seed_928_guide_janani_r';
 
 function getComprehensiveDefaultStudents() {
     // Exactly 928 college records from database_seed.sql (925 Active, 3 Discontinued)

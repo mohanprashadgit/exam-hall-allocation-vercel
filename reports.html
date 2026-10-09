@@ -129,7 +129,7 @@ function renderReport() {
     const filterHall = document.getElementById('filterHall').value;
     const filterMonth = document.getElementById('filterMonth').value;
 
-    let allocs = SeatAllocations.getAll().filter(a => a.reg_no);
+    let allocs = SeatAllocations.getAll().filter(a => a.reg_no || a.stu_id);
 
     if (filterDate) allocs = allocs.filter(a => a.exam_date === filterDate);
     if (filterType) allocs = allocs.filter(a => a.exam_type === filterType);

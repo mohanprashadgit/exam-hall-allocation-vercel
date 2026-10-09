@@ -1072,11 +1072,11 @@
                             <span class="group-label"><span class="group-num">1</span> Department Group</span>
                         </div>
                         <label class="seat-input-label"><i class="fa-solid fa-clipboard-list text-primary me-1"></i>
-                            Register Numbers</label>
+                            Register / Roll Numbers</label>
                         <div class="seat-input-wrap">
                             <span class="seat-input-icon"><i class="fa-solid fa-hashtag text-muted"></i></span>
                             <input type="text" id="input_value_left" class="seat-input group-reg-input"
-                                placeholder="e.g. 950323243001-14 or 001,002,005">
+                                placeholder="e.g. 950323243001-14 or Roll No / 001,002,005">
                         </div>
                         <span class="range-hint">Tip: <code>001-14</code> expands to 001&hellip;014 &nbsp;&bull;&nbsp;
                             <code>001,003</code> individual.</span>
@@ -1117,11 +1117,11 @@
                             <span class="group-label"><span class="group-num">1</span> Department Group</span>
                         </div>
                         <label class="seat-input-label"><i class="fa-solid fa-clipboard-list text-success me-1"></i>
-                            Register Numbers</label>
+                            Register / Roll Numbers</label>
                         <div class="seat-input-wrap">
                             <span class="seat-input-icon"><i class="fa-solid fa-hashtag text-muted"></i></span>
                             <input type="text" id="input_value_right" class="seat-input group-reg-input"
-                                placeholder="e.g. 950323244001-12 or 001,002,005">
+                                placeholder="e.g. 950323244001-12 or Roll No / 001,002,005">
                         </div>
                         <span class="range-hint">Tip: <code>001-12</code> expands to 001&hellip;012 &nbsp;&bull;&nbsp;
                             <code>001,003</code> individual.</span>
@@ -1565,8 +1565,9 @@
                             break;
                         }
                         const s = Students.find(r);
-                        if (s && s.stu_regno && s.stu_regno.length >= 9) {
-                            commonPrefix = s.stu_regno.substring(0, s.stu_regno.length - 3);
+                        const sReg = s ? (s.stu_regno || s.stu_id || '') : '';
+                        if (sReg && sReg.length >= 9) {
+                            commonPrefix = sReg.substring(0, sReg.length - 3);
                             break;
                         }
                     }
@@ -1590,21 +1591,22 @@
                         }
 
                         if (stu) {
+                            // Priority: stu_regno first, fallback to stu_id if empty. If both present, use only stu_regno.
+                            const idOrReg = (stu.stu_regno && stu.stu_regno.trim() !== '') ? stu.stu_regno.trim() : (stu.stu_id ? String(stu.stu_id).trim() : r);
                             const st = (stu.stu_status || '').toLowerCase().trim();
                             if (st.includes('discontinu') || st.includes('complete') || st.includes('dropout') || st.includes('transfer') || st.includes('inactive')) {
                                 skipped.push({
-                                    reg_no: stu.stu_regno || r,
+                                    reg_no: idOrReg,
                                     name: getStudentFullName(stu) || 'Student',
                                     status: 'Discontinued'
                                 });
                                 continue; // Skip discontinued student and organize with remaining active students!
                             }
-                            const regNo = stu.stu_regno || r;
-                            if (!list.some(s => s.reg_no === regNo)) {
+                            if (!list.some(s => s.reg_no === idOrReg)) {
                                 list.push({
-                                    reg_no: regNo,
+                                    reg_no: idOrReg,
                                     name: getStudentFullName(stu),
-                                    dept: stu.stu_dept || getStudentDept(regNo),
+                                    dept: stu.stu_dept || getStudentDept(idOrReg),
                                     subject: group.subject
                                 });
                             }
@@ -1778,10 +1780,10 @@
                 <span class="group-label"><span class="group-num">${idx + 1}</span> Department Group</span>
                 <button type="button" class="btn-remove-group"><i class="fa-solid fa-xmark"></i> Remove</button>
             </div>
-            <label class="seat-input-label"><i class="fa-solid fa-clipboard-list ${colorClass} me-1"></i> Register Numbers</label>
+            <label class="seat-input-label"><i class="fa-solid fa-clipboard-list ${colorClass} me-1"></i> Register / Roll Numbers</label>
             <div class="seat-input-wrap">
                 <span class="seat-input-icon"><i class="fa-solid fa-hashtag text-muted"></i></span>
-                <input type="text" class="seat-input group-reg-input" placeholder="e.g. 950323243001-14 or 001,002,005">
+                <input type="text" class="seat-input group-reg-input" placeholder="e.g. 950323243001-14 or Roll No / 001,002,005">
             </div>
             <span class="range-hint">Tip: <code>001-14</code> expands to 001&hellip;014 &nbsp;&bull;&nbsp; <code>001,003</code> individual.</span>
             <label class="seat-input-label"><i class="fa-solid fa-book ${colorClass} me-1"></i> Subject Name / Code</label>
@@ -1973,7 +1975,7 @@
                 }
 
                 if (seatRecords.length === 0) {
-                    showAlert('No students to save. Please enter register numbers for Left or Right section.', 'warning');
+                    showAlert('No students to save. Please enter register or roll numbers for Left or Right section.', 'warning');
                     return;
                 }
 
